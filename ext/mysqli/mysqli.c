@@ -1097,7 +1097,6 @@ void php_mysqli_fetch_into_hash(INTERNAL_FUNCTION_PARAMETERS, int override_flags
 	MYSQL_FIELD		*fields;
 	MYSQL_ROW		row;
 	unsigned long	*field_len;
-	zend_bool magic_quotes_warning_sent = FALSE;
 #endif
 
 	if (into_object) {
@@ -1180,14 +1179,7 @@ void php_mysqli_fetch_into_hash(INTERNAL_FUNCTION_PARAMETERS, int override_flags
 			{
 
 				/* check if we need magic quotes */
-				if (PG(magic_quotes_runtime)) {
-					if (magic_quotes_warning_sent == FALSE) {
-						magic_quotes_warning_sent = TRUE;
-						php_error_docref(NULL TSRMLS_CC, E_WARNING, "magic_quotes_runtime are deprecated since PHP 5.3");
-					}
-					Z_TYPE_P(res) = IS_STRING;
-					Z_STRVAL_P(res) = php_addslashes(row[i], field_len[i], &Z_STRLEN_P(res), 0 TSRMLS_CC);
-				} else {
+				{
 					ZVAL_STRINGL(res, row[i], field_len[i], 1);
 				}
 			}
@@ -1211,49 +1203,7 @@ void php_mysqli_fetch_into_hash(INTERNAL_FUNCTION_PARAMETERS, int override_flags
 		}
 	}
 #else
-	if (PG(magic_quotes_runtime)) {
-		HashPosition pos_values;
-		zval **entry_values;
-		zval new_return_value;
-		char * string_key;
-		uint   string_key_len;
-		ulong  num_key;
-
-		mysqlnd_fetch_into(result, ((fetchtype & MYSQLI_NUM)? MYSQLND_FETCH_NUM:0) | ((fetchtype & MYSQLI_ASSOC)? MYSQLND_FETCH_ASSOC:0), &new_return_value, MYSQLND_MYSQLI);
-		if (Z_TYPE(new_return_value) == IS_ARRAY) {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "magic_quotes_runtime are deprecated since PHP 5.3");
-			array_init(return_value);
-			zend_hash_internal_pointer_reset_ex(Z_ARRVAL(new_return_value), &pos_values);
-			while (zend_hash_get_current_data_ex(Z_ARRVAL(new_return_value), (void **)&entry_values, &pos_values) == SUCCESS) {
-				if (Z_TYPE_PP(entry_values) == IS_STRING) {
-					int new_str_len;
-					char * new_str = php_addslashes(Z_STRVAL_PP(entry_values), Z_STRLEN_PP(entry_values), &new_str_len, 0 TSRMLS_CC);
-					switch (zend_hash_get_current_key_ex(Z_ARRVAL(new_return_value), &string_key, &string_key_len, &num_key, 0, &pos_values)) {
-						case HASH_KEY_IS_LONG:
-							add_index_stringl(return_value, num_key, new_str, new_str_len, 0);
-							break;
-						case HASH_KEY_IS_STRING:
-							add_assoc_stringl_ex(return_value, string_key, string_key_len, new_str, new_str_len, 0);
-							break;
-					}
-				} else {
-					zval_add_ref(entry_values);
-					switch (zend_hash_get_current_key_ex(Z_ARRVAL(new_return_value), &string_key, &string_key_len, &num_key, 0, &pos_values)) {
-						case HASH_KEY_IS_LONG:
-							add_index_zval(return_value, num_key, *entry_values);
-							break;
-						case HASH_KEY_IS_STRING:
-							add_assoc_zval_ex(return_value, string_key, string_key_len, *entry_values);
-							break;
-					}
-				}
-				zend_hash_move_forward_ex(Z_ARRVAL(new_return_value), &pos_values);
-			}
-		} else {
-			RETVAL_NULL();
-		}
-		zval_dtor(&new_return_value);
-	} else {
+	{
 		mysqlnd_fetch_into(result, ((fetchtype & MYSQLI_NUM)? MYSQLND_FETCH_NUM:0) | ((fetchtype & MYSQLI_ASSOC)? MYSQLND_FETCH_ASSOC:0), return_value, MYSQLND_MYSQLI);
 	}
 

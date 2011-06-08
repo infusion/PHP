@@ -34,7 +34,6 @@
 #include "zend_operators.h"
 #include "ext/standard/php_dns.h"
 #include "ext/standard/php_uuencode.h"
-#include "safe_mode.h"
 
 #ifdef PHP_WIN32
 #include "win32/php_win32_globals.h"
@@ -611,15 +610,6 @@ ZEND_BEGIN_ARG_INFO(arginfo_array_combine, 0)
 ZEND_END_ARG_INFO()
 /* }}} */
 /* {{{ basic_functions.c */
-ZEND_BEGIN_ARG_INFO(arginfo_get_magic_quotes_gpc, 0)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO(arginfo_get_magic_quotes_runtime, 0)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_set_magic_quotes_runtime, 0, 0, 1)
-	ZEND_ARG_INFO(0, new_setting)
-ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO(arginfo_constant, 0)
 	ZEND_ARG_INFO(0, const_name)
@@ -1143,6 +1133,11 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_fwrite, 0, 0, 2)
 	ZEND_ARG_INFO(0, fp)
 	ZEND_ARG_INFO(0, str)
+	ZEND_ARG_INFO(0, length)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_ob_fwrite, 0, 0, 1)
+	ZEND_ARG_INFO(0, fp)
 	ZEND_ARG_INFO(0, length)
 ZEND_END_ARG_INFO()
 
@@ -1800,6 +1795,34 @@ ZEND_BEGIN_ARG_INFO(arginfo_fmod, 0)
 	ZEND_ARG_INFO(0, x)
 	ZEND_ARG_INFO(0, y)
 ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_xround, 0, 0, 1)
+	ZEND_ARG_INFO(0, value)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_sgn, 0, 0, 1)
+	ZEND_ARG_INFO(0, value)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_sigfig, 0, 0, 2)
+	ZEND_ARG_INFO(0, value)
+	ZEND_ARG_INFO(0, figs)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_bround, 0, 0, 2)
+	ZEND_ARG_INFO(0, value)
+	ZEND_ARG_INFO(0, base)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_bound, 0, 0, 2)
+	ZEND_ARG_INFO(0, value)
+	ZEND_ARG_INFO(0, min)
+	ZEND_ARG_INFO(0, max)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_gpp, 0, 0, 1)
+	ZEND_ARG_INFO(0, value)
+ZEND_END_ARG_INFO()
 /* }}} */
 /* {{{ md5.c */
 ZEND_BEGIN_ARG_INFO_EX(arginfo_md5, 0, 0, 1)
@@ -2287,8 +2310,9 @@ ZEND_BEGIN_ARG_INFO(arginfo_ord, 0)
 	ZEND_ARG_INFO(0, character)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO(arginfo_chr, 0)
-	ZEND_ARG_INFO(0, codepoint)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_chr, 0, 0, 1)
+	ZEND_ARG_INFO(0, arg1)
+	ZEND_ARG_INFO(0, ...)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO(arginfo_ucfirst, 0)
@@ -2469,11 +2493,43 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_substr_compare, 0, 0, 3)
 	ZEND_ARG_INFO(0, length)
 	ZEND_ARG_INFO(0, case_sensitivity)
 ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_strcut, 0, 0, 2)
+	ZEND_ARG_INFO(0, str)
+	ZEND_ARG_INFO(0, max)
+	ZEND_ARG_INFO(0, append)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_xsprintf, 0, 0, 2)
+	ZEND_ARG_INFO(0, str)
+	ZEND_ARG_INFO(0, callback)
+	ZEND_ARG_INFO(0, search)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_strcal, 0, 0, 3)
+	ZEND_ARG_INFO(0, format)
+	ZEND_ARG_INFO(0, str)
+	ZEND_ARG_INFO(0, length)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_strical, 0, 0, 3)
+	ZEND_ARG_INFO(0, format)
+	ZEND_ARG_INFO(0, str)
+	ZEND_ARG_INFO(0, length)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_strmap, 0, 0, 2)
+	ZEND_ARG_INFO(0, str)
+	ZEND_ARG_INFO(0, tokens)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_str_random, 0, 0, 1)
+	ZEND_ARG_INFO(0, length)
+	ZEND_ARG_INFO(0, mask)
+ZEND_END_ARG_INFO()
 /* }}} */
 /* {{{ syslog.c */
 #ifdef HAVE_SYSLOG_H
-ZEND_BEGIN_ARG_INFO(arginfo_define_syslog_variables, 0)
-ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO(arginfo_openlog, 0)
 	ZEND_ARG_INFO(0, ident)
@@ -2746,6 +2802,12 @@ const zend_function_entry basic_functions[] = { /* {{{ */
 	PHP_FE(str_split,														arginfo_str_split)
 	PHP_FE(strpbrk,															arginfo_strpbrk)
 	PHP_FE(substr_compare,													arginfo_substr_compare)
+	PHP_FE(strcut,														arginfo_strcut)
+	PHP_FE(xsprintf,													arginfo_xsprintf)
+	PHP_FE(strcal,														arginfo_strcal)
+	PHP_FE(strical,														arginfo_strical)
+	PHP_FE(strmap,														arginfo_strmap)
+	PHP_FE(str_random,													arginfo_str_random)
 
 #ifdef HAVE_STRCOLL
 	PHP_FE(strcoll,															arginfo_strcoll)
@@ -2908,6 +2970,12 @@ const zend_function_entry basic_functions[] = { /* {{{ */
 	PHP_FE(base_convert,													arginfo_base_convert)
 	PHP_FE(number_format,													arginfo_number_format)
 	PHP_FE(fmod,															arginfo_fmod)
+	PHP_FE(xround,															arginfo_xround)
+	PHP_FE(sgn,															arginfo_sgn)
+	PHP_FE(sigfig,															arginfo_sigfig)
+	PHP_FE(bround,															arginfo_bround)
+	PHP_FE(bound,															arginfo_bound)
+	PHP_FE(gpp,															arginfo_gpp)
 #ifdef HAVE_INET_NTOP
 	PHP_RAW_NAMED_FE(inet_ntop,		php_inet_ntop,								arginfo_inet_ntop)
 #endif
@@ -2946,11 +3014,6 @@ const zend_function_entry basic_functions[] = { /* {{{ */
 	PHP_FE(get_current_user,												arginfo_get_current_user)
 	PHP_FE(set_time_limit,													arginfo_set_time_limit)
 	PHP_FE(get_cfg_var,														arginfo_get_cfg_var)
-
-	PHP_DEP_FALIAS(magic_quotes_runtime,	set_magic_quotes_runtime,		arginfo_set_magic_quotes_runtime)
-	PHP_DEP_FE(set_magic_quotes_runtime,									arginfo_set_magic_quotes_runtime)
-	PHP_FE(get_magic_quotes_gpc,											arginfo_get_magic_quotes_gpc)
-	PHP_FE(get_magic_quotes_runtime,										arginfo_get_magic_quotes_runtime)
 
 	PHP_FE(import_request_variables,										arginfo_import_request_variables)
 	PHP_FE(error_log,														arginfo_error_log)
@@ -3072,7 +3135,8 @@ const zend_function_entry basic_functions[] = { /* {{{ */
 	PHP_FE(ftell,															arginfo_ftell)
 	PHP_FE(fflush,															arginfo_fflush)
 	PHP_FE(fwrite,															arginfo_fwrite)
-	PHP_FALIAS(fputs,				fwrite,									arginfo_fwrite)
+	PHP_FE(ob_fwrite,															arginfo_fwrite)
+	PHP_FALIAS(fputs,				fwrite,									arginfo_ob_fwrite)
 	PHP_FE(mkdir,															arginfo_mkdir)
 	PHP_FE(rename,															arginfo_rename)
 	PHP_FE(copy,															arginfo_copy)
@@ -3230,7 +3294,6 @@ const zend_function_entry basic_functions[] = { /* {{{ */
 	PHP_FE(openlog,															arginfo_openlog)
 	PHP_FE(syslog,															arginfo_syslog)
 	PHP_FE(closelog,														arginfo_closelog)
-	PHP_DEP_FE(define_syslog_variables,											arginfo_define_syslog_variables)
 #endif
 
 	/* functions from lcg.c */
@@ -3269,7 +3332,7 @@ const zend_function_entry basic_functions[] = { /* {{{ */
 	PHP_FE(shuffle,															arginfo_shuffle)
 	PHP_FE(array_walk,														arginfo_array_walk)
 	PHP_FE(array_walk_recursive,											arginfo_array_walk_recursive)
-	PHP_FE(count,															arginfo_count)
+	PHP_FE(sizeof,															arginfo_count)
 	PHP_FE(end,																arginfo_end)
 	PHP_FE(prev,															arginfo_prev)
 	PHP_FE(next,															arginfo_next)
@@ -3332,7 +3395,6 @@ const zend_function_entry basic_functions[] = { /* {{{ */
 
 	/* aliases from array.c */
 	PHP_FALIAS(pos,					current,								arginfo_current)
-	PHP_FALIAS(sizeof,				count,									arginfo_count)
 	PHP_FALIAS(key_exists,			array_key_exists,						arginfo_array_key_exists)
 
 	/* functions from assert.c */
@@ -3394,8 +3456,6 @@ static PHP_INI_MH(OnUpdateSafeModeAllowedEnvVars) /* {{{ */
 /* }}} */
 
 PHP_INI_BEGIN() /* {{{ */
-	PHP_INI_ENTRY_EX("safe_mode_protected_env_vars", SAFE_MODE_PROTECTED_ENV_VARS, PHP_INI_SYSTEM, OnUpdateSafeModeProtectedEnvVars, NULL)
-	PHP_INI_ENTRY_EX("safe_mode_allowed_env_vars",   SAFE_MODE_ALLOWED_ENV_VARS,   PHP_INI_SYSTEM, OnUpdateSafeModeAllowedEnvVars,   NULL)
 PHP_INI_END()
 /* }}} */
 
@@ -3739,9 +3799,6 @@ PHP_RINIT_FUNCTION(basic) /* {{{ */
 	PHP_RINIT(dir)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_RINIT(url_scanner_ex)(INIT_FUNC_ARGS_PASSTHRU);
 
-	/* Reset magic_quotes_runtime */
-	PG(magic_quotes_runtime) = INI_BOOL("magic_quotes_runtime");
-
 	/* Setup default context */
 	FG(default_context) = NULL;
 
@@ -4075,39 +4132,6 @@ PHP_FUNCTION(putenv)
 			}
 		}
 #endif
-
-		if (PG(safe_mode)) {
-			/* Check the protected list */
-			if (zend_hash_exists(&BG(sm_protected_env_vars), pe.key, pe.key_len)) {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Safe Mode warning: Cannot override protected environment variable '%s'", pe.key);
-				efree(pe.putenv_string);
-				efree(pe.key);
-				RETURN_FALSE;
-			}
-
-			/* Check the allowed list */
-			if (BG(sm_allowed_env_vars) && *BG(sm_allowed_env_vars)) {
-				char *allowed_env_vars = estrdup(BG(sm_allowed_env_vars));
-				char *strtok_buf = NULL;
-				char *allowed_prefix = php_strtok_r(allowed_env_vars, ", ", &strtok_buf);
-				zend_bool allowed = 0;
-
-				while (allowed_prefix) {
-					if (!strncmp(allowed_prefix, pe.key, strlen(allowed_prefix))) {
-						allowed = 1;
-						break;
-					}
-					allowed_prefix = php_strtok_r(NULL, ", ", &strtok_buf);
-				}
-				efree(allowed_env_vars);
-				if (!allowed) {
-					php_error_docref(NULL TSRMLS_CC, E_WARNING, "Safe Mode warning: Cannot set environment variable '%s' - it's not in the allowed list", pe.key);
-					efree(pe.putenv_string);
-					efree(pe.key);
-					RETURN_FALSE;
-				}
-			}
-		}
 
 		zend_hash_del(&BG(putenv_ht), pe.key, pe.key_len+1);
 
@@ -4614,36 +4638,6 @@ PHP_FUNCTION(get_cfg_var)
 }
 /* }}} */
 
-/* {{{ proto bool set_magic_quotes_runtime(int new_setting)
-   Set the current active configuration setting of magic_quotes_runtime and return previous */
-PHP_FUNCTION(set_magic_quotes_runtime)
-{
-	zend_bool new_setting;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "b", &new_setting) == FAILURE) {
-		return;
-	}
-
-	PG(magic_quotes_runtime) = new_setting;
-	RETURN_TRUE;
-}
-/* }}} */
-
-/* {{{ proto int get_magic_quotes_runtime(void)
-   Get the current active configuration setting of magic_quotes_runtime */
-PHP_FUNCTION(get_magic_quotes_runtime)
-{
-	RETURN_LONG(PG(magic_quotes_runtime));
-}
-/* }}} */
-
-/* {{{ proto int get_magic_quotes_gpc(void)
-   Get the current active configuration setting of magic_quotes_gpc */
-PHP_FUNCTION(get_magic_quotes_gpc)
-{
-	RETURN_LONG(PG(magic_quotes_gpc));
-}
-/* }}} */
 
 /*
 	1st arg = error message
@@ -5162,10 +5156,6 @@ PHP_FUNCTION(highlight_file)
 		RETURN_FALSE;
 	}
 
-	if (PG(safe_mode) && (!php_checkuid(filename, NULL, CHECKUID_ALLOW_ONLY_FILE))) {
-		RETURN_FALSE;
-	}
-
 	if (php_check_open_basedir(filename TSRMLS_CC)) {
 		RETURN_FALSE;
 	}
@@ -5420,33 +5410,18 @@ PHP_FUNCTION(ini_set)
 	}
 
 #define _CHECK_PATH(var, var_len, ini) php_ini_check_path(var, var_len, ini, sizeof(ini))
-	/* safe_mode & basedir check */
-	if (PG(safe_mode) || PG(open_basedir)) {
+	/* basedir check */
+	if (PG(open_basedir)) {
 		if (_CHECK_PATH(varname, varname_len, "error_log") ||
 			_CHECK_PATH(varname, varname_len, "java.class.path") ||
 			_CHECK_PATH(varname, varname_len, "java.home") ||
 			_CHECK_PATH(varname, varname_len, "mail.log") ||
 			_CHECK_PATH(varname, varname_len, "java.library.path") ||
 			_CHECK_PATH(varname, varname_len, "vpopmail.directory")) {
-			if (PG(safe_mode) && (!php_checkuid(new_value, NULL, CHECKUID_CHECK_FILE_AND_DIR))) {
-				zval_dtor(return_value);
-				RETURN_FALSE;
-			}
 			if (php_check_open_basedir(new_value TSRMLS_CC)) {
 				zval_dtor(return_value);
 				RETURN_FALSE;
 			}
-		}
-	}
-
-	/* checks that ensure the user does not overwrite certain ini settings when safe_mode is enabled */
-	if (PG(safe_mode)) {
-		if (!strncmp("max_execution_time", varname, sizeof("max_execution_time")) ||
-			!strncmp("memory_limit", varname, sizeof("memory_limit")) ||
-			!strncmp("child_terminate", varname, sizeof("child_terminate"))
-		) {
-			zval_dtor(return_value);
-			RETURN_FALSE;
 		}
 	}
 
@@ -5832,10 +5807,6 @@ PHP_FUNCTION(move_uploaded_file)
 	}
 
 	if (!zend_hash_exists(SG(rfc1867_uploaded_files), path, path_len + 1)) {
-		RETURN_FALSE;
-	}
-
-	if (PG(safe_mode) && (!php_checkuid(new_path, NULL, CHECKUID_CHECK_FILE_AND_DIR))) {
 		RETURN_FALSE;
 	}
 

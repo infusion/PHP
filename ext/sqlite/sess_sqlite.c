@@ -144,7 +144,7 @@ PS_WRITE_FUNC(sqlite)
 	int binlen;
 	int rv;
 	
-	t = time(NULL);
+	t = sapi_get_request_time(TSRMLS_C);
 
 	binary = safe_emalloc(1 + vallen / 254, 257, 3);
 	binlen = sqlite_encode_binary((const unsigned char*)val, vallen, binary);
@@ -173,7 +173,7 @@ PS_GC_FUNC(sqlite)
 {
 	PS_SQLITE_DATA;
 	int rv;
-	time_t t = time(NULL);
+	time_t t = sapi_get_request_time(TSRMLS_C);
 
 	rv = sqlite_exec_printf(db, 
 			"DELETE FROM session_data WHERE (%d - updated) > %d", 

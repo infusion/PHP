@@ -55,6 +55,28 @@ PHP_FUNCTION(mysqli_affected_rows)
 }
 /* }}} */
 
+/* {{{ proto mixed mysqli_matched_rows(object link)
+   Get number of matched rows in previous MySQL operation */
+PHP_FUNCTION(mysqli_matched_rows)
+{
+	MY_MYSQL 		*mysql;
+	zval  			*mysql_link;
+	my_ulonglong	rc;
+
+	if (zend_parse_method_parameters(ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "O", &mysql_link, mysqli_link_class_entry) == FAILURE) {
+		return;
+	}
+
+	MYSQLI_FETCH_RESOURCE_CONN(mysql, &mysql_link, MYSQLI_STATUS_VALID);
+
+	rc = mysql_matched_rows(mysql->mysql);
+	if (rc == (my_ulonglong) -1) {
+		RETURN_LONG(-1);
+	}
+	MYSQLI_RETURN_LONG_LONG(rc);
+}
+/* }}} */
+
 
 /* {{{ proto bool mysqli_autocommit(object link, bool mode)
    Turn auto commit on or of */
@@ -1699,11 +1721,7 @@ PHP_FUNCTION(mysqli_options)
 	}
 	MYSQLI_FETCH_RESOURCE_CONN(mysql, &mysql_link, MYSQLI_STATUS_INITIALIZED);
 
-#if PHP_API_VERSION < 20100412
-	if ((PG(open_basedir) && PG(open_basedir)[0] != '\0') || PG(safe_mode)) {
-#else
 	if (PG(open_basedir) && PG(open_basedir)[0] != '\0') {
-#endif
 		if(mysql_option == MYSQL_OPT_LOCAL_INFILE) {
 			RETURN_FALSE;
 		}
@@ -1963,6 +1981,29 @@ PHP_FUNCTION(mysqli_stmt_affected_rows)
 	MYSQLI_RETURN_LONG_LONG(rc)
 }
 /* }}} */
+
+
+/* {{{ proto mixed mysqli_stmt_matched_rows(object stmt)
+   Return the number of rows matched in the last query for the given link */
+PHP_FUNCTION(mysqli_stmt_matched_rows)
+{
+	MY_STMT			*stmt;
+	zval			*mysql_stmt;
+	my_ulonglong	rc;
+
+	if (zend_parse_method_parameters(ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "O", &mysql_stmt, mysqli_stmt_class_entry) == FAILURE) {
+		return;
+	}
+	MYSQLI_FETCH_RESOURCE_STMT(stmt, &mysql_stmt, MYSQLI_STATUS_VALID);
+
+	rc = mysql_stmt_matched_rows(stmt->stmt);
+	if (rc == (my_ulonglong) -1) {
+		RETURN_LONG(-1);
+	}
+	MYSQLI_RETURN_LONG_LONG(rc)
+}
+/* }}} */
+
 
 /* {{{ proto bool mysqli_stmt_close(object stmt)
    Close statement */

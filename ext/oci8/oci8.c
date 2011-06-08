@@ -1757,10 +1757,6 @@ php_oci_connection *php_oci_do_connect_ex(char *username, int username_len, char
 			/*	Disable privileged connections in Safe Mode (N.b. safe mode has been removed in PHP
 			 *	6 anyway)
 			 */
-			if (PG(safe_mode)) {
-				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Privileged connect is disabled in Safe Mode");
-				return NULL;
-			}
 		}
 	}
 
@@ -1830,7 +1826,7 @@ php_oci_connection *php_oci_do_connect_ex(char *username, int username_len, char
 		smart_str_append_unsigned_ex(&hashed_details, charsetid_nls_lang, 0);
 	}
 
-	timestamp = time(NULL);
+	timestamp = sapi_get_request_time(TSRMLS_C);
 
 	smart_str_append_unsigned_ex(&hashed_details, session_mode, 0);
 	smart_str_0(&hashed_details);
@@ -2275,7 +2271,7 @@ int php_oci_connection_release(php_oci_connection *connection TSRMLS_DC)
 {
 	int result = 0;
 	zend_bool in_call_save = OCI_G(in_call);
-	time_t timestamp = time(NULL);
+	time_t timestamp = sapi_get_request_time(TSRMLS_C);
 
 	if (connection->is_stub) {
 		return 0;
@@ -2587,7 +2583,7 @@ static int php_oci_persistent_helper(zend_rsrc_list_entry *le TSRMLS_DC)
 	time_t timestamp;
 	php_oci_connection *connection;
 
-	timestamp = time(NULL);
+	timestamp = sapi_get_request_time(TSRMLS_C);
 
 	/* Persistent connection stubs are also counted as they have private session pools */
 	if (le->type == le_pconnection) {
@@ -3004,7 +3000,7 @@ static int php_oci_create_session(php_oci_connection *connection, php_oci_spool 
 #if (OCI_MAJOR_VERSION > 10)
 	ub4 purity = -2;				/* Illegal value to initialize */
 #endif
-	time_t timestamp = time(NULL);
+	time_t timestamp = sapi_get_request_time(TSRMLS_C);
 	ub4 statement_cache_size = (OCI_G(statement_cache_size) > 0) ? OCI_G(statement_cache_size) : 0;
 
 	/* Persistent connections have private session pools */
@@ -3221,7 +3217,7 @@ static sword php_oci_ping_init(php_oci_connection *connection, OCIError *errh TS
 	}
 
 	if (OCI_G(ping_interval) >= 0) {
-		time_t timestamp = time(NULL);
+		time_t timestamp = sapi_get_request_time(TSRMLS_C);
 		*next_pingp = timestamp + OCI_G(ping_interval);
 	} else {
 		*next_pingp = 0;

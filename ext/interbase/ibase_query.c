@@ -1112,11 +1112,7 @@ PHP_FUNCTION(ibase_query)
 				isc_db_handle db = NULL;
 				isc_tr_handle trans = NULL;
 
-				if (PG(sql_safe_mode)) {
-					_php_ibase_module_error("CREATE DATABASE is not allowed in SQL safe mode"
-						TSRMLS_CC);
-
-				} else if (((l = INI_INT("ibase.max_links")) != -1) && (IBG(num_links) >= l)) {
+				if (((l = INI_INT("ibase.max_links")) != -1) && (IBG(num_links) >= l)) {
 					_php_ibase_module_error("CREATE DATABASE is not allowed: maximum link count "
 						"(%ld) reached" TSRMLS_CC, l);
 
@@ -1332,10 +1328,7 @@ static int _php_ibase_var_zval(zval *val, void *data, int type, int len, /* {{{ 
 			data = ((IBVARY *) data)->vary_string;
 			/* no break */
 		case SQL_TEXT:
-			if (PG(magic_quotes_runtime)) {
-				Z_STRVAL_P(val) = php_addslashes(data, len, &Z_STRLEN_P(val), 0 TSRMLS_CC);
-				Z_TYPE_P(val) = IS_STRING;
-			} else {
+			{
 				ZVAL_STRINGL(val,(char *) data,len,1);
 			}
 			break;

@@ -228,7 +228,7 @@ PHP_BZ2_API php_stream *_php_stream_bz2open(php_stream_wrapper *wrapper,
 	path_copy = path;
 #endif  
 
-	if ((PG(safe_mode) && (!php_checkuid(path_copy, NULL, CHECKUID_CHECK_FILE_AND_DIR))) || php_check_open_basedir(path_copy TSRMLS_CC)) {
+	if (php_check_open_basedir(path_copy TSRMLS_CC)) {
 		return NULL;
 	}
 	
@@ -352,12 +352,6 @@ static PHP_FUNCTION(bzread)
 	}
 	
 	Z_STRVAL_P(return_value)[Z_STRLEN_P(return_value)] = 0;
-
-	if (PG(magic_quotes_runtime)) {
-		Z_STRVAL_P(return_value) = php_addslashes(	Z_STRVAL_P(return_value),
-													Z_STRLEN_P(return_value),
-													&Z_STRLEN_P(return_value), 1 TSRMLS_CC);
-	}
 
 	Z_TYPE_P(return_value) = IS_STRING;
 }

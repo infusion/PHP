@@ -915,7 +915,7 @@ int phar_tar_flush(phar_archive_data *phar, char *user_stub, long len, int defau
 	char halt_stub[] = "__HALT_COMPILER();";
 
 	entry.flags = PHAR_ENT_PERM_DEF_FILE;
-	entry.timestamp = time(NULL);
+	entry.timestamp = sapi_get_request_time(TSRMLS_C);
 	entry.is_modified = 1;
 	entry.is_crc_checked = 1;
 	entry.is_tar = 1;

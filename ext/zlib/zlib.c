@@ -44,7 +44,6 @@
 #endif
 
 #include "ext/standard/head.h"
-#include "safe_mode.h"
 #include "ext/standard/php_standard.h"
 #include "ext/standard/info.h"
 #include "php_zlib.h"
@@ -418,12 +417,7 @@ static PHP_FUNCTION(gzfile)
 	memset(buf,0,sizeof(buf));
 
 	while (php_stream_gets(stream, buf, sizeof(buf) - 1) != NULL) {
-		if (PG(magic_quotes_runtime)) {
-			int len;
-
-			slashed = php_addslashes(buf, 0, &len, 0 TSRMLS_CC); /* 0 = don't free source string */
-			add_index_stringl(return_value, i++, slashed, len, 0);
-		} else {
+		{
 			add_index_string(return_value, i++, buf, 1);
 		}
 	}

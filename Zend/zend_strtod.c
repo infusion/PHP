@@ -2615,6 +2615,33 @@ ZEND_API double zend_hex_strtod(const char *str, char **endptr)
 	return value;
 }
 
+ZEND_API double zend_bin_strtod(const char *str, char **endptr)
+{
+	const char *s = str;
+	char c;
+	int any = 0;
+	double value = 0;
+
+	if (*s == '0' && (s[1] == 'b' || s[1] == 'B')) {
+		s += 2;
+	}
+
+	while ((c = *s++)) {
+		if (!(c >= '0' && c <= '1')) {
+			break;
+		}
+
+		any = 1;
+		value = value * 2 + c - '0';
+	}
+
+	if (endptr != NULL) {
+		*endptr = (char *)(any ? s - 1 : str);
+	}
+
+	return value;
+}
+
 ZEND_API double zend_oct_strtod(const char *str, char **endptr)
 {
 	const char *s = str;

@@ -278,9 +278,6 @@ static void sapi_apache_register_server_variables(zval *track_vars_array TSRMLS_
 	/* If PATH_TRANSLATED doesn't exist, copy it from SCRIPT_FILENAME */
 	if (track_vars_array) {
 		symbol_table = track_vars_array->value.ht;
-	} else if (PG(register_globals)) {
-		/* should never happen nowadays */
-		symbol_table = EG(active_symbol_table);
 	} else {
 		symbol_table = NULL;
 	}
@@ -545,7 +542,7 @@ static void init_request_info(TSRMLS_D)
 	SG(request_info).auth_password = NULL;
 	SG(request_info).auth_digest = NULL;
 
-	if (authorization && (!PG(safe_mode) || (PG(safe_mode) && !auth_type(r)))) {
+	if (authorization) {
 		char *p = getword(r->pool, &authorization, ' ');
 		if (!strcasecmp(p, "Basic")) {
 			tmp = uudecode(r->pool, authorization);

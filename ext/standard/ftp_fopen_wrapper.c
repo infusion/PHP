@@ -854,7 +854,7 @@ static int php_stream_ftp_url_stat(php_stream_wrapper *wrapper, char *url, int f
 		tm.tm_isdst = -1;
 
 		/* figure out the GMT offset */
-		stamp = time(NULL);
+		stamp = sapi_get_request_time(TSRMLS_C);
 		gmt = php_gmtime_r(&stamp, &tmbuf);
 		if (!gmt) {
 			goto mdtm_error;

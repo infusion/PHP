@@ -46,6 +46,7 @@ typedef union _temp_variable {
 		zval *ptr;
 		zend_bool fcall_returned_reference;
 		HashPointer fe_pos;
+                long pos;
 	} fe;
 	zend_class_entry *class_entry;
 } temp_variable;

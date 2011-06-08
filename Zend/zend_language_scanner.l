@@ -859,6 +859,7 @@ LNUM	[0-9]+
 DNUM	([0-9]*"."[0-9]+)|([0-9]+"."[0-9]*)
 EXPONENT_DNUM	(({LNUM}|{DNUM})[eE][+-]?{LNUM})
 HNUM	"0x"[0-9a-fA-F]+
+BNUM    "0b"[01]+
 LABEL	[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*
 WHITESPACE [ \n\r\t]+
 TABS_AND_SPACES [ \t]*
@@ -920,6 +921,22 @@ NEWLINE ("\r"|"\n"|"\r\n")
 
 <ST_IN_SCRIPTING>"while" {
 	return T_WHILE;
+}
+
+<ST_IN_SCRIPTING>"count" {
+	return T_COUNT;
+}
+
+<ST_IN_SCRIPTING>"strlen" {
+	return T_STRLEN;
+}
+
+<ST_IN_SCRIPTING>"xifset" {
+	return T_IFSET;
+}
+
+<ST_IN_SCRIPTING>"exists" {
+	return T_EXISTS;
 }
 
 <ST_IN_SCRIPTING>"endwhile" {
@@ -1369,6 +1386,47 @@ NEWLINE ("\r"|"\n"|"\r\n")
 	}
 }
 
+<ST_IN_SCRIPTING>{BNUM} {
+	char *hex = yytext + 2; /* Skip "0x" */
+	int len = yyleng - 2;
+
+	/* Skip any leading 0s */
+	while (*hex == '0') {
+		hex++;
+		len--;
+	}
+
+	if (len < SIZEOF_LONG * 2 * 4) {
+		zendlval->value.lval = strtol(hex, NULL, 2);
+		zendlval->type = IS_LONG;
+		return T_LNUMBER;
+	} else {
+		zendlval->value.dval = zend_bin_strtod(hex, NULL);
+		zendlval->type = IS_DOUBLE;
+		return T_DNUMBER;
+	}
+}
+
+<ST_IN_SCRIPTING>"false" {
+
+    zendlval->value.lval = 0;
+    zendlval->type = IS_BOOL;
+    return T_LNUMBER;
+}
+
+<ST_IN_SCRIPTING>"true" {
+
+    zendlval->value.lval = 1;
+    zendlval->type = IS_BOOL;
+    return T_LNUMBER;
+}
+
+<ST_IN_SCRIPTING>"null" {
+
+    zendlval->type = IS_NULL;
+    return T_LNUMBER;
+}
+
 <ST_VAR_OFFSET>[0]|([1-9][0-9]*) { /* Offset could be treated as a long */
 	if (yyleng < MAX_LENGTH_OF_LONG - 1 || (yyleng == MAX_LENGTH_OF_LONG - 1 && strcmp(yytext, long_min_digits) < 0)) {
 		zendlval->value.lval = strtol(yytext, NULL, 10);
@@ -1381,7 +1439,7 @@ NEWLINE ("\r"|"\n"|"\r\n")
 	return T_NUM_STRING;
 }
 
-<ST_VAR_OFFSET>{LNUM}|{HNUM} { /* Offset must be treated as a string */
+<ST_VAR_OFFSET>{LNUM}|{HNUM}|{BNUM} { /* Offset must be treated as a string */
 	zendlval->value.str.val = (char *)estrndup(yytext, yyleng);
 	zendlval->value.str.len = yyleng;
 	zendlval->type = IS_STRING;
@@ -1502,16 +1560,17 @@ NEWLINE ("\r"|"\n"|"\r\n")
 	return T_NS_C;
 }
 
-<INITIAL>"<script"{WHITESPACE}+"language"{WHITESPACE}*"="{WHITESPACE}*("php"|"\"php\""|"'php'"){WHITESPACE}*">" {
-	YYCTYPE *bracket = zend_memrchr(yytext, '<', yyleng - (sizeof("script language=php>") - 1));
 
-	if (bracket != SCNG(yy_text)) {
-		/* Handle previously scanned HTML, as possible <script> tags found are assumed to not be PHP's */
-		YYCURSOR = bracket;
-		goto inline_html;
-	}
+<INITIAL>"<?php=" {
+        zendlval->value.str.val = yytext; /* no copying - intentional */
+        zendlval->value.str.len = yyleng;
+        zendlval->type = IS_STRING;
+        BEGIN(ST_IN_SCRIPTING);
+        return T_OPEN_TAG_WITH_ECHO;
+}
 
-	HANDLE_NEWLINES(yytext, yyleng);
+
+<INITIAL>"<?php" {
 	zendlval->value.str.val = yytext; /* no copying - intentional */
 	zendlval->value.str.len = yyleng;
 	zendlval->type = IS_STRING;
@@ -1519,67 +1578,6 @@ NEWLINE ("\r"|"\n"|"\r\n")
 	return T_OPEN_TAG;
 }
 
-
-<INITIAL>"<%=" {
-	if (CG(asp_tags)) {
-		zendlval->value.str.val = yytext; /* no copying - intentional */
-		zendlval->value.str.len = yyleng;
-		zendlval->type = IS_STRING;
-		BEGIN(ST_IN_SCRIPTING);
-		return T_OPEN_TAG_WITH_ECHO;
-	} else {
-		goto inline_char_handler;
-	}
-}
-
-
-<INITIAL>"<?=" {
-	if (CG(short_tags)) {
-		zendlval->value.str.val = yytext; /* no copying - intentional */
-		zendlval->value.str.len = yyleng;
-		zendlval->type = IS_STRING;
-		BEGIN(ST_IN_SCRIPTING);
-		return T_OPEN_TAG_WITH_ECHO;
-	} else {
-		goto inline_char_handler;
-	}
-}
-
-
-<INITIAL>"<%" {
-	if (CG(asp_tags)) {
-		zendlval->value.str.val = yytext; /* no copying - intentional */
-		zendlval->value.str.len = yyleng;
-		zendlval->type = IS_STRING;
-		BEGIN(ST_IN_SCRIPTING);
-		return T_OPEN_TAG;
-	} else {
-		goto inline_char_handler;
-	}
-}
-
-
-<INITIAL>"<?php"([ \t]|{NEWLINE}) {
-	zendlval->value.str.val = yytext; /* no copying - intentional */
-	zendlval->value.str.len = yyleng;
-	zendlval->type = IS_STRING;
-	HANDLE_NEWLINE(yytext[yyleng-1]);
-	BEGIN(ST_IN_SCRIPTING);
-	return T_OPEN_TAG;
-}
-
-
-<INITIAL>"<?" {
-	if (CG(short_tags)) {
-		zendlval->value.str.val = yytext; /* no copying - intentional */
-		zendlval->value.str.len = yyleng;
-		zendlval->type = IS_STRING;
-		BEGIN(ST_IN_SCRIPTING);
-		return T_OPEN_TAG;
-	} else {
-		goto inline_char_handler;
-	}
-}
 
 <INITIAL>{ANY_CHAR} {
 	if (YYCURSOR > YYLIMIT) {
@@ -1596,12 +1594,7 @@ inline_char_handler:
 		if (YYCURSOR < YYLIMIT) {
 			switch (*YYCURSOR) {
 				case '?':
-					if (CG(short_tags) || !strncasecmp(YYCURSOR + 1, "php", 3)) { /* Assume [ \t\n\r] follows "php" */
-						break;
-					}
-					continue;
-				case '%':
-					if (CG(asp_tags)) {
+					if (!strncasecmp(YYCURSOR + 1, "php", 3)) { /* Assume [ \t\n\r] follows "php" */
 						break;
 					}
 					continue;
@@ -1709,11 +1702,6 @@ inline_html:
 			case '\n':
 				CG(zend_lineno)++;
 				break;
-			case '%':
-				if (!CG(asp_tags)) {
-					continue;
-				}
-				/* fall through */
 			case '?':
 				if (*YYCURSOR == '>') {
 					YYCURSOR--;
@@ -1766,28 +1754,13 @@ inline_html:
 	return T_COMMENT;
 }
 
-<ST_IN_SCRIPTING>("?>"|"</script"{WHITESPACE}*">"){NEWLINE}? {
+<ST_IN_SCRIPTING>("?>"){NEWLINE}? {
 	zendlval->value.str.val = yytext; /* no copying - intentional */
 	zendlval->value.str.len = yyleng;
 	zendlval->type = IS_STRING;
 	BEGIN(INITIAL);
 	return T_CLOSE_TAG;  /* implicit ';' at php-end tag */
 }
-
-
-<ST_IN_SCRIPTING>"%>"{NEWLINE}? {
-	if (CG(asp_tags)) {
-		BEGIN(INITIAL);
-		zendlval->value.str.len = yyleng;
-		zendlval->type = IS_STRING;
-		zendlval->value.str.val = yytext; /* no copying - intentional */
-		return T_CLOSE_TAG;  /* implicit ';' at php-end tag */
-	} else {
-		yyless(1);
-		return yytext[0];
-	}
-}
-
 
 <ST_IN_SCRIPTING>b?['] {
 	register char *s, *t;

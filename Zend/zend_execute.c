@@ -607,18 +607,20 @@ static inline int zend_assign_to_string_offset(const temp_variable *T, const zva
 {
 	if (Z_TYPE_P(T->str_offset.str) == IS_STRING) {
 
-		if (((int)T->str_offset.offset < 0)) {
+		int off = T->str_offset.offset;
+
+		if (off < 0 && (off+= Z_STRLEN_P(T->str_offset.str)) < 0) {
 			zend_error(E_WARNING, "Illegal string offset:  %d", T->str_offset.offset);
 			return 0;
 		}
 
-		if (T->str_offset.offset >= Z_STRLEN_P(T->str_offset.str)) {
-			Z_STRVAL_P(T->str_offset.str) = (char *) erealloc(Z_STRVAL_P(T->str_offset.str), T->str_offset.offset+1+1);
+		if (off >= Z_STRLEN_P(T->str_offset.str)) {
+			Z_STRVAL_P(T->str_offset.str) = (char *) erealloc(Z_STRVAL_P(T->str_offset.str), off+1+1);
 			memset(Z_STRVAL_P(T->str_offset.str) + Z_STRLEN_P(T->str_offset.str),
 			       ' ',
-			       T->str_offset.offset - Z_STRLEN_P(T->str_offset.str));
-			Z_STRVAL_P(T->str_offset.str)[T->str_offset.offset+1] = 0;
-			Z_STRLEN_P(T->str_offset.str) = T->str_offset.offset+1;
+			       off - Z_STRLEN_P(T->str_offset.str));
+			Z_STRVAL_P(T->str_offset.str)[off+1] = 0;
+			Z_STRLEN_P(T->str_offset.str) = off+1;
 		}
 
 		if (Z_TYPE_P(value) != IS_STRING) {
@@ -628,10 +630,10 @@ static inline int zend_assign_to_string_offset(const temp_variable *T, const zva
 				zval_copy_ctor(&tmp);
 			}
 			convert_to_string(&tmp);
-			Z_STRVAL_P(T->str_offset.str)[T->str_offset.offset] = Z_STRVAL(tmp)[0];
+			Z_STRVAL_P(T->str_offset.str)[off] = Z_STRVAL(tmp)[0];
 			STR_FREE(Z_STRVAL(tmp));
 		} else {
-			Z_STRVAL_P(T->str_offset.str)[T->str_offset.offset] = Z_STRVAL_P(value)[0];
+			Z_STRVAL_P(T->str_offset.str)[off] = Z_STRVAL_P(value)[0];
 			if (value_type == IS_TMP_VAR) {
 				/* we can safely free final_value here
 				 * because separation is done only
@@ -1067,7 +1069,9 @@ static void zend_fetch_dimension_address_read(temp_variable *result, zval **cont
 					dim = &tmp;
 				}
 				if (result) {
-					if ((Z_LVAL_P(dim) < 0 || Z_STRLEN_P(container) <= Z_LVAL_P(dim)) && type != BP_VAR_IS) {
+					if (Z_LVAL_P(dim) < 0 && type != BP_VAR_IS && (Z_LVAL_P(dim)+= Z_STRLEN_P(container)) < 0) {
+						zend_error(E_NOTICE, "Uninitialized string offset: %ld", Z_LVAL_P(dim)-= Z_STRLEN_P(container));
+					} else if (Z_STRLEN_P(container) <= Z_LVAL_P(dim) < 0 && type != BP_VAR_IS) {
 						zend_error(E_NOTICE, "Uninitialized string offset: %ld", Z_LVAL_P(dim));
 					}
 					result->str_offset.str = container;

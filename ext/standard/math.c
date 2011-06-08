@@ -13,7 +13,7 @@
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
    | Authors: Jim Winstead <jimw@php.net>                                 |
-   |          Stig Sæther Bakken <ssb@php.net>                            |
+   |          Stig Sï¿½ther Bakken <ssb@php.net>                            |
    |          Zeev Suraski <zeev@zend.com>                                |
    | PHP 4.0 patches by Thies C. Arntzen <thies@thieso.net>               |
    +----------------------------------------------------------------------+
@@ -1248,6 +1248,185 @@ PHP_FUNCTION(fmod)
 }
 /* }}} */
 
+/* {{{ proto int xround(int n)
+   Round to the next power of 10 */
+PHP_FUNCTION(xround)
+{
+	double d;
+	long n, x = 1;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "d", &d) == FAILURE) {
+		return;
+	}
+
+	n = (long) d;
+	n = n + (n < d) - (d < n);
+
+	if (n < 0) {
+		n = -n;
+		x = -1;
+	}
+
+	if (n > 100000) {
+		if (n > 10000000) {
+			if (n <= 100000000) RETURN_LONG(x * 100000000);
+			RETURN_LONG(x * 1000000000);
+		} else {
+			if (n <= 1000000) RETURN_LONG(x * 1000000);
+			RETURN_LONG(x * 10000000);
+		}
+	} else {
+		if (n > 1000) {
+			if (n <= 10000) RETURN_LONG(x * 10000);
+			RETURN_LONG(x * 100000);
+		} else {
+			if (n <= 10) {
+				if (n <= 1) RETURN_LONG(x);
+				RETURN_LONG(x * 10);
+			}
+			if (n <= 100) RETURN_LONG(x * 100);
+			RETURN_LONG(x * 1000);
+		}
+	}
+}
+/* }}} */
+
+/* {{{ proto int sgn(mixed n)
+   Returns the sign of a number */
+PHP_FUNCTION(sgn)
+{
+	zval *x, p, n, null;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &x) == FAILURE) {
+		return;
+	}
+
+	Z_TYPE(null) = IS_LONG;
+	Z_LVAL(null) = 0;
+
+	is_smaller_function(&p, &null, x TSRMLS_CC);
+	is_smaller_function(&n, x, &null TSRMLS_CC);
+
+	RETURN_LONG(Z_LVAL(p) - Z_LVAL(n));
+}
+/* }}} */
+
+/* {{{ proto int sigfig(double n, int figs)
+   Calculates the significant figures of a number */
+PHP_FUNCTION(sigfig)
+{
+	long figs;
+	double value, pow_exp, pow_sig;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "dl", &value, &figs) == FAILURE) {
+		return;
+	}
+
+	if (figs < 0 || figs > 10) RETURN_FALSE;
+
+	pow_exp = php_intpow10((int) log10(value) + 1);
+	pow_sig = php_intpow10(figs);
+
+	RETURN_DOUBLE((int) ((value / pow_exp) * pow_sig + 0.5) / pow_sig * pow_exp);
+}
+/* }}} */
+
+/* {{{ proto int bround(int n, int b)
+   Round to the next multiple of a base */
+PHP_FUNCTION(bround)
+{
+	double n, b;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "dd", &n, &b) == FAILURE) {
+		return;
+	}
+
+	if (0 == b) {
+		RETURN_FALSE;
+	}
+	RETURN_DOUBLE(ceil(n / b) * b);
+}
+/* }}} */
+
+/* {{{ proto int bound(mixed n, mixed min, mixed max)
+   Limits a number to a specified lower min and a upper max value */
+PHP_FUNCTION(bound)
+{
+	zval *num, *min, *max, result;	
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zz|z", &num, &min, &max) == FAILURE) {
+		return;
+	}
+
+	if (2 == ZEND_NUM_ARGS()) {
+
+		// max < num -> max
+		if (Z_TYPE_P(min) != IS_NULL) {
+			is_smaller_function(&result, min, num TSRMLS_CC);
+			if (Z_LVAL(result)) {
+				RETURN_ZVAL(min, 1, 0);
+			}
+		}
+		RETURN_ZVAL(num, 1, 0);
+	}
+
+	// max < min -> min
+	if (min != NULL && Z_TYPE_P(min) != IS_NULL && max != NULL && Z_TYPE_P(max) != IS_NULL) {
+		is_smaller_function(&result, max, min TSRMLS_CC);
+		if (Z_LVAL(result)) {
+			RETURN_ZVAL(min, 1, 0);
+		}
+	}
+
+	// num < min -> min
+	if (min !=NULL && Z_TYPE_P(min) != IS_NULL) {
+		is_smaller_function(&result, num, min TSRMLS_CC);
+		if (Z_LVAL(result)) {
+			RETURN_ZVAL(min, 1, 0);
+		}
+	}
+
+	// max < num -> max
+	if (max != NULL && Z_TYPE_P(max) != IS_NULL) {
+		is_smaller_function(&result, max, num TSRMLS_CC);
+		if (Z_LVAL(result)) {
+			RETURN_ZVAL(max, 1, 0);
+		}
+	}
+
+	// -> num
+	RETURN_ZVAL(num, 1, 0);
+}
+/* }}} */
+
+/* {{{ proto int gpp(int n)
+   Returns the greatest proper power of an integer */
+/*
+   WARNING: this function is expermental: it could change its name or
+   disappear in the next version of PHP!
+*/
+PHP_FUNCTION(gpp)
+{
+	long x;
+	register long f = 1, n = 1, nn;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &x) == FAILURE) {
+		return;
+	}
+
+	if (x <= 0) {
+		RETURN_LONG(1);
+	}
+
+	for (;; n++) {
+
+		if ((nn = n * n) >= x) {
+			break;
+		}
+		if (0 == (x % nn)) {
+			f = n;
+		}
+	}
+	RETURN_LONG(f);
+}
+/* }}} */
 
 
 /*

@@ -13,7 +13,7 @@
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
    | Authors: Rasmus Lerdorf <rasmus@php.net>                             |
-   |          Stig Sæther Bakken <ssb@php.net>                            |
+   |          Stig Sï¿½ther Bakken <ssb@php.net>                            |
    +----------------------------------------------------------------------+
 */
 
@@ -92,6 +92,12 @@ PHP_FUNCTION(str_word_count);
 PHP_FUNCTION(str_split);
 PHP_FUNCTION(strpbrk);
 PHP_FUNCTION(substr_compare);
+PHP_FUNCTION(strcut);
+PHP_FUNCTION(xsprintf);
+PHP_FUNCTION(strcal);
+PHP_FUNCTION(strical);
+PHP_FUNCTION(strmap);
+PHP_FUNCTION(str_random);
 #ifdef HAVE_STRCOLL
 PHP_FUNCTION(strcoll);
 #endif
@@ -120,6 +126,7 @@ PHPAPI struct lconv *localeconv_r(struct lconv *out);
 PHPAPI char *php_strtoupper(char *s, size_t len);
 PHPAPI char *php_strtolower(char *s, size_t len);
 PHPAPI char *php_strtr(char *str, int len, char *str_from, char *str_to, int trlen);
+PHPAPI char *php_strtr_del(char *str, int *len, char *from, int from_len);
 PHPAPI char *php_addslashes(char *str, int length, int *new_length, int freeit TSRMLS_DC);
 PHPAPI char *php_addslashes_ex(char *str, int length, int *new_length, int freeit, int ignore_sybase TSRMLS_DC);
 PHPAPI char *php_addcslashes(char *str, int length, int *new_length, int freeit, char *what, int wlength TSRMLS_DC);
@@ -137,7 +144,7 @@ PHPAPI size_t php_strip_tags(char *rbuf, int len, int *state, char *allow, int a
 PHPAPI size_t php_strip_tags_ex(char *rbuf, int len, int *stateptr, char *allow, int allow_len, zend_bool allow_tag_spaces);
 PHPAPI int php_char_to_str_ex(char *str, uint len, char from, char *to, int to_len, zval *result, int case_sensitivity, int *replace_count);
 PHPAPI int php_char_to_str(char *str, uint len, char from, char *to, int to_len, zval *result);
-PHPAPI void php_implode(zval *delim, zval *arr, zval *return_value TSRMLS_DC);
+PHPAPI void php_implode(zval *delim, zval *arr, zval *return_value, zend_bool keys TSRMLS_DC);
 PHPAPI void php_explode(zval *delim, zval *str, zval *return_value, long limit);
 
 PHPAPI size_t php_strspn(char *s1, char *s2, char *s1_end, char *s2_end); 

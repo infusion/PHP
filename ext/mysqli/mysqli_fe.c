@@ -335,6 +335,7 @@ ZEND_END_ARG_INFO()
  */
 const zend_function_entry mysqli_functions[] = {
 	PHP_FE(mysqli_affected_rows,						arginfo_mysqli_only_link)
+	PHP_FE(mysqli_matched_rows,							arginfo_mysqli_only_link)
 	PHP_FE(mysqli_autocommit,							arginfo_mysqli_autocommit)
 	PHP_FE(mysqli_change_user,							arginfo_mysqli_change_user)
 	PHP_FE(mysqli_character_set_name,					arginfo_mysqli_only_link)
@@ -365,6 +366,7 @@ const zend_function_entry mysqli_functions[] = {
 	PHP_FE(mysqli_fetch_assoc,							arginfo_mysqli_only_result)
 	PHP_FE(mysqli_fetch_object,							arginfo_mysqli_fetch_object)
 	PHP_FE(mysqli_fetch_row,							arginfo_mysqli_only_result)
+	PHP_FE(mysqli_return,								arginfo_mysqli_only_result)
 	PHP_FE(mysqli_field_count,							arginfo_mysqli_only_link)
 	PHP_FE(mysqli_field_seek,							arginfo_mysqli_result_and_fieldnr)
 	PHP_FE(mysqli_field_tell,							arginfo_mysqli_only_result)
@@ -417,6 +419,7 @@ const zend_function_entry mysqli_functions[] = {
 	PHP_FE(mysqli_set_charset,							arginfo_mysqli_set_charset)
 #endif
 	PHP_FE(mysqli_stmt_affected_rows,					arginfo_mysqli_only_statement)
+	PHP_FE(mysqli_stmt_matched_rows,					arginfo_mysqli_only_statement)
 	PHP_FE(mysqli_stmt_attr_get,						arginfo_mysqli_stmt_attr_get)
 	PHP_FE(mysqli_stmt_attr_set,						arginfo_mysqli_stmt_attr_set)
 	PHP_FE(mysqli_stmt_bind_param,						arginfo_mysqli_stmt_bind_param)
@@ -555,6 +558,7 @@ const zend_function_entry mysqli_result_methods[] = {
 	PHP_FALIAS(fetch_assoc, mysqli_fetch_assoc, arginfo_mysqli_no_params)
 	PHP_FALIAS(fetch_object,mysqli_fetch_object, arginfo_class_mysqli_fetch_object)
 	PHP_FALIAS(fetch_row, mysqli_fetch_row, arginfo_mysqli_no_params)
+	PHP_FALIAS(return, mysqli_return, arginfo_mysqli_no_params)
 	PHP_FALIAS(field_seek, mysqli_field_seek, arginfo_class_mysqli_result_and_fieldnr)
 	PHP_FALIAS(free_result, mysqli_free_result, arginfo_mysqli_no_params)
 	{NULL, NULL, NULL}

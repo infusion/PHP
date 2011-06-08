@@ -47,9 +47,7 @@ PHPAPI void php_register_variable_safe(char *var, char *strval, int str_len, zva
 	
 	/* Prepare value */
 	Z_STRLEN(new_entry) = str_len;
-	if (PG(magic_quotes_gpc)) {
-		Z_STRVAL(new_entry) = php_addslashes(strval, Z_STRLEN(new_entry), &Z_STRLEN(new_entry), 0 TSRMLS_CC);
-	} else {
+	{
 		Z_STRVAL(new_entry) = estrndup(strval, Z_STRLEN(new_entry));
 	}
 	Z_TYPE(new_entry) = IS_STRING;
@@ -72,11 +70,6 @@ PHPAPI void php_register_variable_ex(char *var_name, zval *val, zval *track_vars
 
 	if (track_vars_array) {
 		symtable1 = Z_ARRVAL_P(track_vars_array);
-	} else if (PG(register_globals)) {
-		if (!EG(active_symbol_table)) {
-			zend_rebuild_symbol_table(TSRMLS_C);
-		}
-		symtable1 = EG(active_symbol_table);
 	}
 	if (!symtable1) {
 		/* Nothing to do */
@@ -139,9 +132,6 @@ PHPAPI void php_register_variable_ex(char *var_name, zval *val, zval *track_vars
 				if (track_vars_array) {
 					ht = Z_ARRVAL_P(track_vars_array);
 					zend_hash_del(ht, var, var_len + 1);
-				} else if (PG(register_globals)) {
-					ht = EG(active_symbol_table);
-					zend_hash_del(ht, var, var_len + 1);
 				}
 
 				zval_dtor(val);
@@ -184,9 +174,7 @@ PHPAPI void php_register_variable_ex(char *var_name, zval *val, zval *track_vars
 				array_init(gpc_element);
 				zend_hash_next_index_insert(symtable1, &gpc_element, sizeof(zval *), (void **) &gpc_element_p);
 			} else {
-				if (PG(magic_quotes_gpc)) {
-					escaped_index = php_addslashes(index, index_len, &index_len, 0 TSRMLS_CC);
-				} else {
+				{
 					escaped_index = index;
 				}
 				if (zend_symtable_find(symtable1, escaped_index, index_len + 1, (void **) &gpc_element_p) == FAILURE
@@ -220,9 +208,7 @@ plain_var:
 		if (!index) {
 			zend_hash_next_index_insert(symtable1, &gpc_element, sizeof(zval *), (void **) &gpc_element_p);
 		} else {
-			if (PG(magic_quotes_gpc)) { 
-				escaped_index = php_addslashes(index, index_len, &index_len, 0 TSRMLS_CC);
-			} else {
+			{
 				escaped_index = index;
 			}
 			/* 
@@ -429,9 +415,6 @@ void _php_import_environment_variables(zval *array_ptr TSRMLS_DC)
 	size_t alloc_size = sizeof(buf);
 	unsigned long nlen; /* ptrdiff_t is not portable */
 
-	/* turn off magic_quotes while importing environment variables */
-	int magic_quotes_gpc = PG(magic_quotes_gpc);
-	PG(magic_quotes_gpc) = 0;
 
 	for (env = environ; env != NULL && *env != NULL; env++) {
 		p = strchr(*env, '=');
@@ -450,7 +433,6 @@ void _php_import_environment_variables(zval *array_ptr TSRMLS_DC)
 	if (t != buf && t != NULL) {
 		efree(t);
 	}
-	PG(magic_quotes_gpc) = magic_quotes_gpc;
 }
 
 zend_bool php_std_auto_global_callback(char *name, uint name_len TSRMLS_DC)
@@ -467,7 +449,7 @@ static void php_build_argv(char *s, zval *track_vars_array TSRMLS_DC)
 	int count = 0;
 	char *ss, *space;
 	
-	if (!(PG(register_globals) || SG(request_info).argc || track_vars_array)) {
+	if (!(SG(request_info).argc || track_vars_array)) {
 		return;
 	}
 	
@@ -526,7 +508,7 @@ static void php_build_argv(char *s, zval *track_vars_array TSRMLS_DC)
 	}
 	Z_TYPE_P(argc) = IS_LONG;
 
-	if (PG(register_globals) || SG(request_info).argc) {
+	if (SG(request_info).argc) {
 		Z_ADDREF_P(arr);
 		Z_ADDREF_P(argc);
 		zend_hash_update(&EG(symbol_table), "argv", sizeof("argv"), &arr, sizeof(zval *), NULL);
@@ -564,8 +546,6 @@ PHPAPI int php_handle_special_queries(TSRMLS_D)
 static inline void php_register_server_variables(TSRMLS_D)
 {
 	zval *array_ptr = NULL;
-	/* turn off magic_quotes while importing server variables */
-	int magic_quotes_gpc = PG(magic_quotes_gpc);
 
 	ALLOC_ZVAL(array_ptr);
 	array_init(array_ptr);
@@ -574,7 +554,6 @@ static inline void php_register_server_variables(TSRMLS_D)
 		zval_ptr_dtor(&PG(http_globals)[TRACK_VARS_SERVER]);
 	}
 	PG(http_globals)[TRACK_VARS_SERVER] = array_ptr;
-	PG(magic_quotes_gpc) = 0;
 
 	/* Server variables */
 	if (sapi_module.register_server_variables) {
@@ -598,8 +577,6 @@ static inline void php_register_server_variables(TSRMLS_D)
 		Z_LVAL(new_entry) = sapi_get_request_time(TSRMLS_C);
 		php_register_variable_ex("REQUEST_TIME", &new_entry, array_ptr TSRMLS_CC);
 	}
-
-	PG(magic_quotes_gpc) = magic_quotes_gpc;
 }
 /* }}} */
 
@@ -613,7 +590,6 @@ static void php_autoglobal_merge(HashTable *dest, HashTable *src TSRMLS_DC)
 	ulong num_key;
 	HashPosition pos;
 	int key_type;
-	int globals_check = (PG(register_globals) && (dest == (&EG(symbol_table))));
 
 	zend_hash_internal_pointer_reset_ex(src, &pos);
 	while (zend_hash_get_current_data_ex(src, (void **)&src_entry, &pos) == SUCCESS) {
@@ -626,7 +602,7 @@ static void php_autoglobal_merge(HashTable *dest, HashTable *src TSRMLS_DC)
 			Z_ADDREF_PP(src_entry);
 			if (key_type == HASH_KEY_IS_STRING) {
 				/* if register_globals is on and working with main symbol table, prevent overwriting of GLOBALS */
-				if (!globals_check || string_key_len != sizeof("GLOBALS") || memcmp(string_key, "GLOBALS", sizeof("GLOBALS") - 1)) {
+				if (string_key_len != sizeof("GLOBALS") || memcmp(string_key, "GLOBALS", sizeof("GLOBALS") - 1)) {
 					zend_hash_update(dest, string_key, string_key_len, src_entry, sizeof(zval *), NULL);
 				} else {
 					Z_DELREF_PP(src_entry);
@@ -653,7 +629,7 @@ int php_hash_environment(TSRMLS_D)
 {
 	char *p;
 	unsigned char _gpc_flags[5] = {0, 0, 0, 0, 0};
-	zend_bool jit_initialization = (PG(auto_globals_jit) && !PG(register_globals) && !PG(register_long_arrays));
+	zend_bool jit_initialization = (PG(auto_globals_jit));
 	struct auto_global_record {
 		char *name;
 		uint name_len;
@@ -683,9 +659,6 @@ int php_hash_environment(TSRMLS_D)
 				if (!_gpc_flags[0] && !SG(headers_sent) && SG(request_info).request_method && !strcasecmp(SG(request_info).request_method, "POST")) {
 					sapi_module.treat_data(PARSE_POST, NULL, NULL TSRMLS_CC);	/* POST Data */
 					_gpc_flags[0] = 1;
-					if (PG(register_globals)) {
-						php_autoglobal_merge(&EG(symbol_table), Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_POST]) TSRMLS_CC);
-					}
 				}
 				break;
 			case 'c':
@@ -693,9 +666,6 @@ int php_hash_environment(TSRMLS_D)
 				if (!_gpc_flags[1]) {
 					sapi_module.treat_data(PARSE_COOKIE, NULL, NULL TSRMLS_CC);	/* Cookie Data */
 					_gpc_flags[1] = 1;
-					if (PG(register_globals)) {
-						php_autoglobal_merge(&EG(symbol_table), Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_COOKIE]) TSRMLS_CC);
-					}
 				}
 				break;
 			case 'g':
@@ -703,9 +673,6 @@ int php_hash_environment(TSRMLS_D)
 				if (!_gpc_flags[2]) {
 					sapi_module.treat_data(PARSE_GET, NULL, NULL TSRMLS_CC);	/* GET Data */
 					_gpc_flags[2] = 1;
-					if (PG(register_globals)) {
-						php_autoglobal_merge(&EG(symbol_table), Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_GET]) TSRMLS_CC);
-					}
 				}
 				break;
 			case 'e':
@@ -714,9 +681,6 @@ int php_hash_environment(TSRMLS_D)
 					zend_auto_global_disable_jit("_ENV", sizeof("_ENV")-1 TSRMLS_CC);
 					php_auto_globals_create_env("_ENV", sizeof("_ENV")-1 TSRMLS_CC);
 					_gpc_flags[3] = 1;
-					if (PG(register_globals)) {
-						php_autoglobal_merge(&EG(symbol_table), Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_ENV]) TSRMLS_CC);
-					}
 				}
 				break;
 			case 's':
@@ -725,11 +689,15 @@ int php_hash_environment(TSRMLS_D)
 					zend_auto_global_disable_jit("_SERVER", sizeof("_SERVER")-1 TSRMLS_CC);
 					php_register_server_variables(TSRMLS_C);
 					_gpc_flags[4] = 1;
-					if (PG(register_globals)) {
-						php_autoglobal_merge(&EG(symbol_table), Z_ARRVAL_P(PG(http_globals)[TRACK_VARS_SERVER]) TSRMLS_CC);
-					}
 				}
 				break;
+			case 'r':
+			case 'R':
+				/* Create _REQUEST */
+				if (!jit_initialization) {
+					zend_auto_global_disable_jit("_REQUEST", sizeof("_REQUEST")-1 TSRMLS_CC);
+					php_auto_globals_create_request("_REQUEST", sizeof("_REQUEST")-1 TSRMLS_CC);
+				}
 		}
 	}
 
@@ -750,16 +718,6 @@ int php_hash_environment(TSRMLS_D)
 
 		Z_ADDREF_P(PG(http_globals)[i]);
 		zend_hash_update(&EG(symbol_table), auto_global_records[i].name, auto_global_records[i].name_len, &PG(http_globals)[i], sizeof(zval *), NULL);
-		if (PG(register_long_arrays)) {
-			zend_hash_update(&EG(symbol_table), auto_global_records[i].long_name, auto_global_records[i].long_name_len, &PG(http_globals)[i], sizeof(zval *), NULL);
-			Z_ADDREF_P(PG(http_globals)[i]);
-		}
-	}
-
-	/* Create _REQUEST */
-	if (!jit_initialization) {
-		zend_auto_global_disable_jit("_REQUEST", sizeof("_REQUEST")-1 TSRMLS_CC);
-		php_auto_globals_create_request("_REQUEST", sizeof("_REQUEST")-1 TSRMLS_CC);
 	}
 
 	return SUCCESS;
@@ -800,11 +758,6 @@ static zend_bool php_auto_globals_create_server(char *name, uint name_len TSRMLS
 
 	zend_hash_update(&EG(symbol_table), name, name_len + 1, &PG(http_globals)[TRACK_VARS_SERVER], sizeof(zval *), NULL);
 	Z_ADDREF_P(PG(http_globals)[TRACK_VARS_SERVER]);
-
-	if (PG(register_long_arrays)) {
-		zend_hash_update(&EG(symbol_table), "HTTP_SERVER_VARS", sizeof("HTTP_SERVER_VARS"), &PG(http_globals)[TRACK_VARS_SERVER], sizeof(zval *), NULL);
-		Z_ADDREF_P(PG(http_globals)[TRACK_VARS_SERVER]);
-	}
 	
 	return 0; /* don't rearm */
 }
@@ -826,11 +779,6 @@ static zend_bool php_auto_globals_create_env(char *name, uint name_len TSRMLS_DC
 
 	zend_hash_update(&EG(symbol_table), name, name_len + 1, &PG(http_globals)[TRACK_VARS_ENV], sizeof(zval *), NULL);
 	Z_ADDREF_P(PG(http_globals)[TRACK_VARS_ENV]);
-
-	if (PG(register_long_arrays)) {
-		zend_hash_update(&EG(symbol_table), "HTTP_ENV_VARS", sizeof("HTTP_ENV_VARS"), &PG(http_globals)[TRACK_VARS_ENV], sizeof(zval *), NULL);
-		Z_ADDREF_P(PG(http_globals)[TRACK_VARS_ENV]);
-	}
 
 	return 0; /* don't rearm */
 }

@@ -712,6 +712,9 @@ MYSQLND_METHOD(mysqlnd_conn, connect)(MYSQLND * conn,
 	}
 #endif
 
+	/* Default native int and float casting at connection time */
+	conn->options.int_and_float_native = 1;
+
 	if (FAIL == mysqlnd_connect_run_authentication(conn, user, passwd, db, db_len, greet_packet, &conn->options, mysql_flags TSRMLS_CC)) {
 		goto err;
 	}
@@ -1668,6 +1671,22 @@ MYSQLND_METHOD(mysqlnd_conn, affected_rows)(const MYSQLND * const conn TSRMLS_DC
 /* }}} */
 
 
+/* {{{ mysqlnd_conn::matched_rows */
+static uint64_t
+MYSQLND_METHOD(mysqlnd_conn, matched_rows)(const MYSQLND * const conn)
+{
+	char *p = conn->last_message;
+
+	if (p && strlen(p) >= 40) {
+		/* Read upsert result */
+		return (uint64_t) strtol(p + sizeof("Rows matched:"), NULL, 10);
+	}
+	/* fallback for selects */
+	return conn->upsert_status.affected_rows;
+}
+/* }}} */
+
+
 /* {{{ mysqlnd_conn::warning_count */
 static unsigned int
 MYSQLND_METHOD(mysqlnd_conn, warning_count)(const MYSQLND * const conn TSRMLS_DC)
@@ -2310,6 +2329,7 @@ MYSQLND_CLASS_METHODS_START(mysqlnd_conn)
 
 	MYSQLND_METHOD(mysqlnd_conn, insert_id),
 	MYSQLND_METHOD(mysqlnd_conn, affected_rows),
+	MYSQLND_METHOD(mysqlnd_conn, matched_rows),
 	MYSQLND_METHOD(mysqlnd_conn, warning_count),
 	MYSQLND_METHOD(mysqlnd_conn, field_count),
 

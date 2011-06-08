@@ -1290,15 +1290,6 @@ ZEND_FUNCTION(function_exists)
 	
 	efree(lcname);
 
-	/*
-	 * A bit of a hack, but not a bad one: we see if the handler of the function
-	 * is actually one that displays "function is disabled" message.
-	 */
-	if (retval && func->type == ZEND_INTERNAL_FUNCTION &&
-		func->internal_function.handler == zif_display_disabled_function) {
-		retval = 0;
-	}
-
 	RETURN_BOOL(retval);
 }
 /* }}} */

@@ -13,7 +13,7 @@
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
    | Authors: Jim Winstead <jimw@php.net>                                 |
-   |          Stig Sæther Bakken <ssb@php.net>                            |
+   |          Stig Sï¿½ther Bakken <ssb@php.net>                            |
    +----------------------------------------------------------------------+
 */
 
@@ -65,11 +65,17 @@ PHP_FUNCTION(number_format);
 PHP_FUNCTION(fmod);
 PHP_FUNCTION(deg2rad);
 PHP_FUNCTION(rad2deg);
+PHP_FUNCTION(bround);
+PHP_FUNCTION(bound);
+PHP_FUNCTION(sigfig);
+PHP_FUNCTION(sgn);
+PHP_FUNCTION(xround);
 
    /*
    WARNING: these functions are expermental: they could change their names or 
    disappear in the next version of PHP!
    */
+PHP_FUNCTION(gpp);
 PHP_FUNCTION(hypot);
 PHP_FUNCTION(expm1);
 PHP_FUNCTION(log1p);

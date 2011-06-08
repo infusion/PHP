@@ -1010,7 +1010,7 @@ ftp_mdtm(ftpbuf_t *ftp, const char *path)
 	tm.tm_isdst = -1;
 
 	/* figure out the GMT offset */
-	stamp = time(NULL);
+	stamp = sapi_get_request_time(TSRMLS_C);
 	gmt = php_gmtime_r(&stamp, &tmbuf);
 	if (!gmt) {
 		return -1;

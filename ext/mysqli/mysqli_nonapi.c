@@ -359,6 +359,34 @@ PHP_FUNCTION(mysqli_fetch_assoc)
 }
 /* }}} */
 
+/* {{{ proto mixed mysqli_return(object result) */
+PHP_FUNCTION(mysqli_return)
+{
+#if defined(MYSQLI_USE_MYSQLND)
+	MYSQL_RES	*result;
+	zval		*mysql_result;
+
+	long offset = 0;
+	zend_bool clean = 1;
+
+	if (zend_parse_method_parameters(ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "O|lb", &mysql_result, mysqli_result_class_entry, &offset, &clean) == FAILURE) {
+		return;
+	}
+	MYSQLI_FETCH_RESOURCE(result, MYSQL_RES *, &mysql_result, "mysqli_result", MYSQLI_STATUS_VALID);
+
+	if (!result->m.fetch_field_data) {
+		RETVAL_NULL();
+	}
+
+	result->m.fetch_field_data(result, offset, return_value);
+
+	if (clean) {
+		mysql_free_result(result);
+		MYSQLI_CLEAR_RESOURCE(&mysql_result);
+	}
+#endif
+}
+/* }}} */
 
 /* {{{ proto mixed mysqli_fetch_all (object result [,int resulttype])
    Fetches all result rows as an associative array, a numeric array, or both */
@@ -367,7 +395,7 @@ PHP_FUNCTION(mysqli_fetch_all)
 {
 	MYSQL_RES	*result;
 	zval		*mysql_result;
-	long		mode = MYSQLND_FETCH_NUM;
+	long		mode = MYSQLND_FETCH_ASSOC;
 
 	if (zend_parse_method_parameters(ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "O|l", &mysql_result, mysqli_result_class_entry, &mode) == FAILURE) {
 		return;

@@ -24,6 +24,7 @@
 
 PHP_FUNCTION(mysqli);
 PHP_FUNCTION(mysqli_affected_rows);
+PHP_FUNCTION(mysqli_matched_rows);
 PHP_FUNCTION(mysqli_autocommit);
 PHP_FUNCTION(mysqli_change_user);
 PHP_FUNCTION(mysqli_character_set_name);
@@ -42,6 +43,7 @@ PHP_FUNCTION(mysqli_fetch_all);
 PHP_FUNCTION(mysqli_fetch_array);
 PHP_FUNCTION(mysqli_fetch_assoc);
 PHP_FUNCTION(mysqli_fetch_object);
+PHP_FUNCTION(mysqli_return);
 PHP_FUNCTION(mysqli_fetch_field);
 PHP_FUNCTION(mysqli_fetch_fields);
 PHP_FUNCTION(mysqli_fetch_field_direct);
@@ -107,6 +109,7 @@ PHP_FUNCTION(mysqli_ssl_set);
 PHP_FUNCTION(mysqli_stat);
 PHP_FUNCTION(mysqli_refresh);
 PHP_FUNCTION(mysqli_stmt_affected_rows);
+PHP_FUNCTION(mysqli_stmt_matched_rows);
 PHP_FUNCTION(mysqli_stmt_close);
 PHP_FUNCTION(mysqli_stmt_data_seek);
 PHP_FUNCTION(mysqli_stmt_errno);

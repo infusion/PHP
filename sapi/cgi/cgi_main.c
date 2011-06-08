@@ -617,14 +617,12 @@ void cgi_php_import_environment_variables(zval *array_ptr TSRMLS_DC)
 	if (fcgi_is_fastcgi()) {
 		fcgi_request *request = (fcgi_request*) SG(server_context);
 		HashPosition pos;
-		int magic_quotes_gpc = PG(magic_quotes_gpc);
+
 		char *var, **val;
 		uint var_len;
 		ulong idx;
 		int filter_arg = (array_ptr == PG(http_globals)[TRACK_VARS_ENV])?PARSE_ENV:PARSE_SERVER;
 
-		/* turn off magic_quotes while importing environment variables */
-		PG(magic_quotes_gpc) = 0;
 		for (zend_hash_internal_pointer_reset_ex(request->env, &pos);
 			zend_hash_get_current_key_ex(request->env, &var, &var_len, &idx, 0, &pos) == HASH_KEY_IS_STRING &&
 			zend_hash_get_current_data_ex(request->env, (void **) &val, &pos) == SUCCESS;
@@ -636,7 +634,6 @@ void cgi_php_import_environment_variables(zval *array_ptr TSRMLS_DC)
 				php_register_variable_safe(var, *val, new_val_len, array_ptr TSRMLS_CC);
 			}
 		}
-		PG(magic_quotes_gpc) = magic_quotes_gpc;
 	}
 }
 
@@ -702,6 +699,16 @@ static void sapi_cgi_log_message(char *message)
 		/* ignore return code */
 	} else {
 		fprintf(stderr, "%s\n", message);
+	}
+}
+
+static time_t sapi_cgi_request_time(TSRMLS_D)
+{
+	char *rq_time = sapi_cgibin_getenv("RAW_TIME", sizeof("RAW_TIME") - 1 TSRMLS_CC);
+	if (rq_time) {
+		return atol(rq_time);
+	} else {
+		return 0;
 	}
 }
 
@@ -911,7 +918,7 @@ static sapi_module_struct cgi_sapi_module = {
 
 	sapi_cgi_register_variables,	/* register server variables */
 	sapi_cgi_log_message,			/* Log message */
-	NULL,							/* Get request time */
+	sapi_cgi_request_time,			/* Get request time */
 	NULL,							/* Child terminate */
 
 	STANDARD_SAPI_MODULE_PROPERTIES

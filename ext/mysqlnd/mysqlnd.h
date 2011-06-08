@@ -147,6 +147,7 @@ PHPAPI enum_func_status _mysqlnd_poll(MYSQLND **r_array, MYSQLND **e_array, MYSQ
 #define mysqlnd_field_count(conn)		(conn)->m->get_field_count((conn) TSRMLS_CC)
 #define mysqlnd_insert_id(conn)			(conn)->m->get_last_insert_id((conn) TSRMLS_CC)
 #define mysqlnd_affected_rows(conn)		(conn)->m->get_affected_rows((conn) TSRMLS_CC)
+#define mysqlnd_matched_rows(conn)		(conn)->m->get_matched_rows((conn) TSRMLS_CC)
 #define mysqlnd_warning_count(conn)		(conn)->m->get_warning_count((conn) TSRMLS_CC)
 #define mysqlnd_info(conn)				(conn)->m->get_last_message((conn) TSRMLS_CC)
 #define mysqlnd_get_server_info(conn)	(conn)->m->get_server_information((conn) TSRMLS_CC)
@@ -175,6 +176,7 @@ PHPAPI unsigned int	mysqlnd_get_client_version();
 /* PS */
 #define mysqlnd_stmt_insert_id(stmt)		(stmt)->m->get_last_insert_id((stmt) TSRMLS_CC)
 #define mysqlnd_stmt_affected_rows(stmt)	(stmt)->m->get_affected_rows((stmt) TSRMLS_CC)
+#define mysqlnd_stmt_matched_rows(stmt)         (stmt)->m->get_matched_rows((stmt) TSRMLS_CC)
 #define mysqlnd_stmt_num_rows(stmt)			(stmt)->m->get_num_rows((stmt) TSRMLS_CC)
 #define mysqlnd_stmt_param_count(stmt)		(stmt)->m->get_param_count((stmt) TSRMLS_CC)
 #define mysqlnd_stmt_field_count(stmt)		(stmt)->m->get_field_count((stmt) TSRMLS_CC)

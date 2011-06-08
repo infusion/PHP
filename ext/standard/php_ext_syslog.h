@@ -12,7 +12,7 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Author: Stig Sæther Bakken <ssb@php.net>                             |
+   | Author: Stig Sï¿½ther Bakken <ssb@php.net>                             |
    +----------------------------------------------------------------------+
 */
 
@@ -35,7 +35,6 @@ PHP_MSHUTDOWN_FUNCTION(syslog);
 PHP_FUNCTION(openlog);
 PHP_FUNCTION(syslog);
 PHP_FUNCTION(closelog);
-PHP_FUNCTION(define_syslog_variables);
 
 #endif
 

@@ -102,9 +102,6 @@ struct _zend_compiler_globals {
 	HashTable *auto_globals;
 
 	zend_bool in_compilation;
-	zend_bool short_tags;
-	zend_bool asp_tags;
-	zend_bool allow_call_time_pass_reference;
 
 	zend_declarables declarables;
 

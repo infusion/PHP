@@ -93,20 +93,6 @@ int fpm_php_apply_defines_ex(struct key_value_s *kv, int mode) /* {{{ */
 		return -1;
 	}
 
-	if (!strcmp(name, "disable_functions") && *value) {
-		char *v = strdup(value);
-		PG(disable_functions) = v;
-		fpm_php_disable(v, zend_disable_function TSRMLS_CC);
-		return 1;
-	}
-
-	if (!strcmp(name, "disable_classes") && *value) {
-		char *v = strdup(value);
-		PG(disable_classes) = v;
-		fpm_php_disable(v, zend_disable_class TSRMLS_CC);
-		return 1;
-	}
-
 	return 1;
 }
 /* }}} */

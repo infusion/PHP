@@ -287,7 +287,7 @@ struct _sapi_post_entry {
 
 #define SAPI_DEFAULT_MIMETYPE		"text/html"
 #define SAPI_DEFAULT_CHARSET		""
-#define SAPI_PHP_VERSION_HEADER		"X-Powered-By: PHP/" PHP_VERSION
+#define SAPI_PHP_VERSION_HEADER		"X-Powered-By: PHP/" PHP_VERSION " Advanced"
 
 #define SAPI_POST_READER_FUNC(post_reader) void post_reader(TSRMLS_D)
 #define SAPI_POST_HANDLER_FUNC(post_handler) void post_handler(char *content_type_dup, void *arg TSRMLS_DC)

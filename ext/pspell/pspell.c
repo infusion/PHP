@@ -407,11 +407,6 @@ static PHP_FUNCTION(pspell_new_personal)
 		RETURN_FALSE;
 	}
 
-	if (PG(safe_mode) && (!php_checkuid(personal, NULL, CHECKUID_CHECK_FILE_AND_DIR))) {
-		delete_pspell_config(config);
-		RETURN_FALSE;
-	}
-
 	if (php_check_open_basedir(personal TSRMLS_CC)) {
 		delete_pspell_config(config);
 		RETURN_FALSE;
@@ -845,10 +840,6 @@ static void pspell_config_path(INTERNAL_FUNCTION_PARAMETERS, char *option)
 
 	PSPELL_FETCH_CONFIG;
 
-	if (PG(safe_mode) && (!php_checkuid(value, NULL, CHECKUID_CHECK_FILE_AND_DIR))) {
-		RETURN_FALSE;
-	}
-
 	if (php_check_open_basedir(value TSRMLS_CC)) {
 		RETURN_FALSE;
 	}
@@ -901,10 +892,6 @@ static PHP_FUNCTION(pspell_config_repl)
 	pspell_config_replace(config, "save-repl", "true");
 
 	if (strlen(repl) != repl_len) {
-		RETURN_FALSE;
-	}
-
-	if (PG(safe_mode) && (!php_checkuid(repl, NULL, CHECKUID_CHECK_FILE_AND_DIR))) {
 		RETURN_FALSE;
 	}
 

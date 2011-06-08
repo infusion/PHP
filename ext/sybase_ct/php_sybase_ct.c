@@ -1815,9 +1815,7 @@ static void php_sybase_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, int numerics)
 		ALLOC_ZVAL(tmp);
 		*tmp = result->data[result->store ? result->cur_row : 0][i];
 		INIT_PZVAL(tmp);
-		if (PG(magic_quotes_runtime) && Z_TYPE_P(tmp) == IS_STRING) {
-			Z_STRVAL_P(tmp) = php_addslashes(Z_STRVAL_P(tmp), Z_STRLEN_P(tmp), &Z_STRLEN_P(tmp), 0 TSRMLS_CC);
-		} else {
+		{
 			zval_copy_ctor(tmp);
 		}
 		if (numerics) {

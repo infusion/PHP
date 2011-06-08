@@ -40,6 +40,7 @@
 
 /* functions */
 #define mysql_affected_rows(r)			mysqlnd_affected_rows((r))
+#define mysql_matched_rows(r)			mysqlnd_matched_rows((r))
 #define mysql_autocommit(r,m)			mysqlnd_autocommit((r),(m))
 #define mysql_change_user(r,a,b,c)		mysqlnd_change_user((r), (a), (b), (c), FALSE)
 #define mysql_character_set_name(c)		mysqlnd_character_set_name((c))
@@ -81,6 +82,7 @@
 #define mysql_sqlstate(r)				mysqlnd_sqlstate((r))
 #define mysql_ssl_set(c,key,cert,ca,capath,cipher)	mysqlnd_ssl_set((c), (key), (cert), (ca), (capath), (cipher))
 #define mysql_stmt_affected_rows(s)		mysqlnd_stmt_affected_rows((s))
+#define mysql_stmt_matched_rows(s)		mysqlnd_stmt_matched_rows((s))
 #define mysql_stmt_field_count(s)		mysqlnd_stmt_field_count((s))
 #define mysql_stmt_param_count(s)		mysqlnd_stmt_param_count((s))
 #define mysql_stmt_num_rows(s)			mysqlnd_stmt_num_rows((s))

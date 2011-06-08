@@ -96,6 +96,8 @@ PHP_FUNCTION(date_sunrise);
 PHP_FUNCTION(date_sunset);
 PHP_FUNCTION(date_sun_info);
 
+PHP_FUNCTION(timechop);
+
 PHP_RINIT_FUNCTION(date);
 PHP_RSHUTDOWN_FUNCTION(date);
 PHP_MINIT_FUNCTION(date);

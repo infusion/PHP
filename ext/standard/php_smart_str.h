@@ -77,6 +77,8 @@
 	smart_str_appendl_ex((dest), (src), strlen(src), (what))
 #define smart_str_appends(dest, src) \
 	smart_str_appendl((dest), (src), strlen(src))
+#define smart_str_append_const(dest, src) \
+	smart_str_appendl((dest), (src), sizeof(src) - 1) /* ZEND_STRL doesn't work here*/
 
 #define smart_str_appendc(dest, c) \
 	smart_str_appendc_ex((dest), (c), 0)
@@ -119,15 +121,15 @@
 } while (0)
 
 /* input: buf points to the END of the buffer */
-#define smart_str_print_unsigned4(buf, num, vartype, result) do {	\
-	char *__p = (buf);												\
-	vartype __num = (num);											\
-	*__p = '\0';													\
-	do {															\
-		*--__p = (char) (__num % 10) + '0';							\
-		__num /= 10;												\
-	} while (__num > 0);											\
-	result = __p;													\
+#define smart_str_print_unsigned4(buf, num, vartype, result) do {			\
+	unsigned char *__p = (buf);							\
+	vartype __num = (num);								\
+	do {										\
+		const vartype __t = __num / 10;						\
+		*--__p = (unsigned char) (__num - __t * 10 + '0');			\
+		__num = __t;								\
+	} while (__num);								\
+	result = __p;									\
 } while (0)
 
 /* buf points to the END of the buffer */

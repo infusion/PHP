@@ -22,7 +22,6 @@
 #include "php.h"
 #include <ctype.h>
 #include "php_string.h"
-#include "safe_mode.h"
 #include "ext/standard/head.h"
 #include "ext/standard/file.h"
 #include "basic_functions.h"
@@ -70,33 +69,7 @@ PHPAPI int php_exec(int type, char *cmd, zval *array, zval *return_value TSRMLS_
 	void (*sig_handler)() = NULL;
 #endif
 
-	if (PG(safe_mode)) {
-		if ((c = strchr(cmd, ' '))) {
-			*c = '\0';
-			c++;
-		}
-		if (strstr(cmd, "..")) {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "No '..' components allowed in path");
-			goto err;
-		}
-		
-		b = strrchr(cmd, PHP_DIR_SEPARATOR);
-
-#ifdef PHP_WIN32
-		if (b && *b == '\\' && b == cmd) {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Invalid absolute path.");
-			goto err;
-		}
-#endif
-
-		spprintf(&d, 0, "%s%s%s%s%s", PG(safe_mode_exec_dir), (b ? "" : "/"), (b ? b : cmd), (c ? " " : ""), (c ? c : ""));
-		if (c) {
-			*(c - 1) = ' ';
-		}
-		cmd_p = php_escape_shell_cmd(d);
-		efree(d);
-		d = cmd_p;
-	} else {
+	{
 		cmd_p = cmd;
 	}
 
@@ -170,12 +143,7 @@ PHPAPI int php_exec(int type, char *cmd, zval *array, zval *return_value TSRMLS_
 			}
 
 			/* Return last line from the shell command */
-			if (PG(magic_quotes_runtime)) {
-				int len;
-
-				tmp = php_addslashes(buf, bufl, &len, 0 TSRMLS_CC);
-				RETVAL_STRINGL(tmp, len, 0);
-			} else {
+			{
 				RETVAL_STRINGL(buf, bufl, 1);
 			}
 		} else { /* should return NULL, but for BC we return "" */
@@ -482,11 +450,6 @@ PHP_FUNCTION(shell_exec)
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &command, &command_len) == FAILURE) {
 		return;
-	}
-
-	if (PG(safe_mode)) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot execute using backquotes in Safe Mode");
-		RETURN_FALSE;
 	}
 
 #ifdef PHP_WIN32

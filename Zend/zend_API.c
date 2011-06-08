@@ -2278,63 +2278,6 @@ ZEND_API int zend_set_hash_symbol(zval *symbol, const char *name, int name_lengt
 }
 /* }}} */
 
-/* Disabled functions support */
-
-/* {{{ proto void display_disabled_function(void)
-Dummy function which displays an error when a disabled function is called. */
-ZEND_API ZEND_FUNCTION(display_disabled_function)
-{
-	zend_error(E_WARNING, "%s() has been disabled for security reasons", get_active_function_name(TSRMLS_C));
-}
-/* }}} */
-
-static zend_function_entry disabled_function[] = {
-	ZEND_FE(display_disabled_function,			NULL)
-	{ NULL, NULL, NULL }
-};
-
-ZEND_API int zend_disable_function(char *function_name, uint function_name_length TSRMLS_DC) /* {{{ */
-{
-	if (zend_hash_del(CG(function_table), function_name, function_name_length+1)==FAILURE) {
-		return FAILURE;
-	}
-	disabled_function[0].fname = function_name;
-	return zend_register_functions(NULL, disabled_function, CG(function_table), MODULE_PERSISTENT TSRMLS_CC);
-}
-/* }}} */
-
-static zend_object_value display_disabled_class(zend_class_entry *class_type TSRMLS_DC) /* {{{ */
-{
-	zend_object_value retval;
-	zend_object *intern;
-	retval = zend_objects_new(&intern, class_type TSRMLS_CC);
-	ALLOC_HASHTABLE(intern->properties);
-	zend_hash_init(intern->properties, 0, NULL, ZVAL_PTR_DTOR, 0);
-	zend_error(E_WARNING, "%s() has been disabled for security reasons", class_type->name);
-	return retval;
-}
-/* }}} */
-
-static const zend_function_entry disabled_class_new[] = {
-	{ NULL, NULL, NULL }
-};
-
-ZEND_API int zend_disable_class(char *class_name, uint class_name_length TSRMLS_DC) /* {{{ */
-{
-	zend_class_entry disabled_class;
-
-	zend_str_tolower(class_name, class_name_length);
-	if (zend_hash_del(CG(class_table), class_name, class_name_length+1)==FAILURE) {
-		return FAILURE;
-	}
-	INIT_OVERLOADED_CLASS_ENTRY_EX(disabled_class, class_name, class_name_length, disabled_class_new, NULL, NULL, NULL, NULL, NULL);
-	disabled_class.create_object = display_disabled_class;
-	disabled_class.name_length = class_name_length;
-	zend_register_internal_class(&disabled_class TSRMLS_CC);
-	return SUCCESS;
-}
-/* }}} */
-
 static int zend_is_callable_check_class(const char *name, int name_len, zend_fcall_info_cache *fcc, int *strict_class, char **error TSRMLS_DC) /* {{{ */
 {
 	int ret = 0;

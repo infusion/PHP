@@ -119,6 +119,10 @@
 %token T_UNSET
 %token T_ISSET
 %token T_EMPTY
+%token T_STRLEN
+%token T_COUNT
+%token T_IFSET
+%token T_EXISTS
 %token T_HALT_COMPILER
 %token T_CLASS
 %token T_INTERFACE
@@ -645,6 +649,7 @@ expr_without_variable:
 	|	'@' { zend_do_begin_silence(&$1 TSRMLS_CC); } expr { zend_do_end_silence(&$1 TSRMLS_CC); $$ = $3; }
 	|	scalar				{ $$ = $1; }
 	|	T_ARRAY '(' array_pair_list ')' { $$ = $3; }
+	|	'[' array_pair_list ']'         { $$ = $2; }
 	|	'`' backticks_expr '`' { zend_do_shell_exec(&$$, &$2 TSRMLS_CC); }
 	|	T_PRINT expr  { zend_do_print(&$$, &$2 TSRMLS_CC); }
 	|	function is_reference '(' { zend_do_begin_lambda_function_declaration(&$$, &$1, $2.op_type TSRMLS_CC); }
@@ -981,7 +986,11 @@ encaps_var_offset:
 
 internal_functions_in_yacc:
 		T_ISSET '(' isset_variables ')' { $$ = $3; }
-	|	T_EMPTY '(' variable ')'	{ zend_do_isset_or_isempty(ZEND_ISEMPTY, &$$, &$3 TSRMLS_CC); }
+	|	T_IFSET '(' ifset_variables ')' { $$ = $3; }
+	|	T_EXISTS '(' exists_variables ')' { $$ = $3; }
+	|	T_EMPTY '(' variable ')'{ zend_do_isset_or_isempty(ZEND_ISEMPTY, &$$, &$3 TSRMLS_CC); }
+	|	T_STRLEN '(' expr ')'	{ zend_do_sizeof(ZEND_STRLEN, &$$, &$3 TSRMLS_CC); }
+	|	T_COUNT '(' expr ')'	{ zend_do_sizeof(ZEND_COUNT, &$$, &$3 TSRMLS_CC); }
 	|	T_INCLUDE expr 			{ zend_do_include_or_eval(ZEND_INCLUDE, &$$, &$2 TSRMLS_CC); }
 	|	T_INCLUDE_ONCE expr 	{ zend_do_include_or_eval(ZEND_INCLUDE_ONCE, &$$, &$2 TSRMLS_CC); }
 	|	T_EVAL '(' expr ')' 	{ zend_do_include_or_eval(ZEND_EVAL, &$$, &$3 TSRMLS_CC); }
@@ -990,8 +999,17 @@ internal_functions_in_yacc:
 ;
 
 isset_variables:
-		variable 				{ zend_do_isset_or_isempty(ZEND_ISSET, &$$, &$1 TSRMLS_CC); }
+		variable 			{ zend_do_isset_or_isempty(ZEND_ISSET, &$$, &$1 TSRMLS_CC); }
 	|	isset_variables ',' { zend_do_boolean_and_begin(&$1, &$2 TSRMLS_CC); } variable { znode tmp; zend_do_isset_or_isempty(ZEND_ISSET, &tmp, &$4 TSRMLS_CC); zend_do_boolean_and_end(&$$, &$1, &tmp, &$2 TSRMLS_CC); }
+;
+
+ifset_variables:
+		ifset_variables ',' expr	{ zend_do_add_array_element(&$$, &$3, NULL, 0 TSRMLS_CC); }
+	|	expr				{ zend_do_init_array(&$$, &$1, NULL, 0 TSRMLS_CC); }
+
+exists_variables:
+		variable 			{ zend_do_isset_or_isempty(ZEND_EXISTS, &$$, &$1 TSRMLS_CC); }
+	|	exists_variables ',' { zend_do_boolean_and_begin(&$1, &$2 TSRMLS_CC); } variable { znode tmp; zend_do_isset_or_isempty(ZEND_EXISTS, &tmp, &$4 TSRMLS_CC); zend_do_boolean_and_end(&$$, &$1, &tmp, &$2 TSRMLS_CC); }
 ;
 
 class_constant:

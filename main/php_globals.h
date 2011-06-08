@@ -54,28 +54,17 @@ typedef struct _arg_separators {
 } arg_separators;
 
 struct _php_core_globals {
-	zend_bool magic_quotes_gpc;
-	zend_bool magic_quotes_runtime;
-	zend_bool magic_quotes_sybase;
 
-	zend_bool safe_mode;
-
-	zend_bool allow_call_time_pass_reference;
 	zend_bool implicit_flush;
 
 	long output_buffering;
 
-	char *safe_mode_include_dir;
-	zend_bool safe_mode_gid;
-	zend_bool sql_safe_mode;
 	zend_bool enable_dl;
 
 	char *output_handler;
 
 	char *unserialize_callback_func;
 	long serialize_precision;
-
-	char *safe_mode_exec_dir;
 
 	long memory_limit;
 	long max_input_time;
@@ -105,6 +94,8 @@ struct _php_core_globals {
 	char *auto_prepend_file;
 	char *auto_append_file;
 
+        char *globals_file;
+
 	arg_separators arg_separator;
 
 	char *variables_order;
@@ -121,9 +112,9 @@ struct _php_core_globals {
 	zval *http_globals[6];
 
 	zend_bool expose_php;
+        zend_bool use_sapi_time;
+        zend_bool ignore_include_warnings;
 
-	zend_bool register_globals;
-	zend_bool register_long_arrays;
 	zend_bool register_argc_argv;
 	zend_bool auto_globals_jit;
 
@@ -151,8 +142,6 @@ struct _php_core_globals {
 	char *last_error_file;
 	int  last_error_lineno;
 
-	char *disable_functions;
-	char *disable_classes;
 	zend_bool allow_url_include;
 	zend_bool exit_on_timeout;
 #ifdef PHP_WIN32

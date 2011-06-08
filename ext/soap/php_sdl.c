@@ -3161,7 +3161,7 @@ sdlPtr get_sdl(zval *this_ptr, char *uri, long cache_wsdl TSRMLS_DC)
 	zval **tmp, **proxy_host, **proxy_port, *orig_context = NULL, *new_context = NULL;
 	smart_str headers = {0};
 	char* key = NULL;
-	time_t t = time(0);
+	time_t t = sapi_get_request_time(TSRMLS_C);
 
 	if (strchr(uri,':') != NULL || IS_ABSOLUTE_PATH(uri, uri_len)) {
 		uri_len = strlen(uri);
@@ -3186,7 +3186,7 @@ sdlPtr get_sdl(zval *this_ptr, char *uri, long cache_wsdl TSRMLS_DC)
 	}
 
 	if ((cache_wsdl & WSDL_CACHE_DISK) && (uri_len < MAXPATHLEN)) {
-		time_t t = time(0);
+		time_t t = sapi_get_request_time(TSRMLS_C);
 		char md5str[33];
 		PHP_MD5_CTX context;
 		unsigned char digest[16];

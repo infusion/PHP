@@ -1671,6 +1671,16 @@ MYSQLND_METHOD(mysqlnd_stmt, affected_rows)(const MYSQLND_STMT * const s TSRMLS_
 /* }}} */
 
 
+/* {{{ mysqlnd_stmt::matched_rows */
+static uint64_t
+MYSQLND_METHOD(mysqlnd_stmt, matched_rows)(const MYSQLND_STMT * const s TSRMLS_DC)
+{
+	MYSQLND_STMT_DATA * stmt = s? s->data:NULL;
+	return stmt? stmt->upsert_status.affected_rows : 0;
+}
+/* }}} */
+
+
 /* {{{ mysqlnd_stmt::num_rows */
 static uint64_t
 MYSQLND_METHOD(mysqlnd_stmt, num_rows)(const MYSQLND_STMT * const s TSRMLS_DC)
@@ -2326,6 +2336,7 @@ MYSQLND_CLASS_METHODS_START(mysqlnd_stmt)
 
 	MYSQLND_METHOD(mysqlnd_stmt, insert_id),
 	MYSQLND_METHOD(mysqlnd_stmt, affected_rows),
+	MYSQLND_METHOD(mysqlnd_stmt, matched_rows),
 	MYSQLND_METHOD(mysqlnd_stmt, num_rows),
 
 	MYSQLND_METHOD(mysqlnd_stmt, param_count),

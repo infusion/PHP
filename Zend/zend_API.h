@@ -265,8 +265,6 @@ ZEND_API int zend_register_class_alias_ex(const char *name, int name_len, zend_c
 #define zend_register_ns_class_alias(ns, name, ce) \
 	zend_register_class_alias_ex(ZEND_NS_NAME(ns, name), sizeof(ZEND_NS_NAME(ns, name))-1, ce TSRMLS_DC)
 
-ZEND_API int zend_disable_function(char *function_name, uint function_name_length TSRMLS_DC);
-ZEND_API int zend_disable_class(char *class_name, uint class_name_length TSRMLS_DC);
 
 ZEND_API void zend_wrong_param_count(TSRMLS_D);
 
@@ -496,8 +494,6 @@ ZEND_API void zend_rebuild_symbol_table(TSRMLS_D);
 
 #define add_method(arg, key, method)	add_assoc_function((arg), (key), (method))
 
-ZEND_API ZEND_FUNCTION(display_disabled_function);
-ZEND_API ZEND_FUNCTION(display_disabled_class);
 END_EXTERN_C()
 
 #if ZEND_DEBUG

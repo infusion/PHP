@@ -189,6 +189,42 @@ static int link_affected_rows_read(mysqli_object *obj, zval **retval TSRMLS_DC)
 }
 /* }}} */
 
+/* {{{ property link_matched_rows_read */
+static int link_matched_rows_read(mysqli_object *obj, zval **retval TSRMLS_DC)
+{
+	MY_MYSQL *mysql;
+	my_ulonglong rc;
+
+	MAKE_STD_ZVAL(*retval);
+
+	CHECK_STATUS(MYSQLI_STATUS_INITIALIZED);
+
+ 	mysql = (MY_MYSQL *)((MYSQLI_RESOURCE *)(obj->ptr))->ptr;
+
+	if (!mysql) {
+		ZVAL_NULL(*retval);
+	} else {
+		CHECK_STATUS(MYSQLI_STATUS_VALID);
+
+		rc = mysql_matched_rows(mysql->mysql);
+
+		if (rc == (my_ulonglong) -1) {
+			ZVAL_LONG(*retval, -1);
+			return SUCCESS;
+		}
+
+		if (rc < LONG_MAX) {
+			ZVAL_LONG(*retval, (long) rc);
+		} else {
+			char *ret;
+			int l = spprintf(&ret, 0, MYSQLI_LLU_SPEC, rc);
+			ZVAL_STRINGL(*retval, ret, l, 0);
+		}
+	}
+	return SUCCESS;
+}
+/* }}} */
+
 /* link properties */
 MYSQLI_MAP_PROPERTY_FUNC_LONG(link_errno_read, mysql_errno, MYSQLI_GET_MYSQL(MYSQLI_STATUS_INITIALIZED), ulong, "%lu")
 MYSQLI_MAP_PROPERTY_FUNC_STRING(link_error_read, mysql_error, MYSQLI_GET_MYSQL(MYSQLI_STATUS_INITIALIZED))
@@ -306,6 +342,39 @@ static int stmt_affected_rows_read(mysqli_object *obj, zval **retval TSRMLS_DC)
 }
 /* }}} */
 
+/* {{{ property stmt_matched_rows_read */
+static int stmt_matched_rows_read(mysqli_object *obj, zval **retval TSRMLS_DC)
+{
+	MY_STMT *p;
+	my_ulonglong rc;
+
+	MAKE_STD_ZVAL(*retval);
+	CHECK_STATUS(MYSQLI_STATUS_VALID);
+
+ 	p = (MY_STMT *)((MYSQLI_RESOURCE *)(obj->ptr))->ptr;
+
+	if (!p) {
+		ZVAL_NULL(*retval);
+	} else {
+		rc = mysql_stmt_matched_rows(p->stmt);
+
+		if (rc == (my_ulonglong) -1) {
+			ZVAL_LONG(*retval, -1);
+			return SUCCESS;
+		}
+
+		if (rc < LONG_MAX) {
+			ZVAL_LONG(*retval, (long) rc);
+		} else {
+			char *ret;
+			int l = spprintf(&ret, 0, MYSQLI_LLU_SPEC, rc);
+			ZVAL_STRINGL(*retval, ret, l, 0);
+		}
+	}
+	return SUCCESS;
+}
+/* }}} */
+
 MYSQLI_MAP_PROPERTY_FUNC_LONG(stmt_insert_id_read, mysql_stmt_insert_id, MYSQLI_GET_STMT(MYSQLI_STATUS_VALID), my_ulonglong, MYSQLI_LLU_SPEC)
 MYSQLI_MAP_PROPERTY_FUNC_LONG(stmt_num_rows_read, mysql_stmt_num_rows, MYSQLI_GET_STMT(MYSQLI_STATUS_VALID), my_ulonglong, MYSQLI_LLU_SPEC)
 MYSQLI_MAP_PROPERTY_FUNC_LONG(stmt_param_count_read, mysql_stmt_param_count, MYSQLI_GET_STMT(MYSQLI_STATUS_VALID), ulong, "%lu")
@@ -317,6 +386,7 @@ MYSQLI_MAP_PROPERTY_FUNC_STRING(stmt_sqlstate_read, mysql_stmt_sqlstate, MYSQLI_
 /* }}} */
 const mysqli_property_entry mysqli_link_property_entries[] = {
 	{"affected_rows", 	sizeof("affected_rows") - 1,	link_affected_rows_read, NULL},
+	{"matched_rows", 	sizeof("matched_rows") - 1,		link_matched_rows_read, NULL},
 	{"client_info", 	sizeof("client_info") - 1,		link_client_info_read, NULL},
 	{"client_version",	sizeof("client_version") - 1,	link_client_version_read, NULL},
 	{"connect_errno",	sizeof("connect_errno") - 1,	link_connect_errno_read, NULL},
@@ -339,6 +409,7 @@ const mysqli_property_entry mysqli_link_property_entries[] = {
 /* should not be const, as it is patched during runtime */
 zend_property_info mysqli_link_property_info_entries[] = {
 	{ZEND_ACC_PUBLIC, "affected_rows",	sizeof("affected_rows") - 1,	0, NULL, 0, NULL},
+	{ZEND_ACC_PUBLIC, "matched_rows",	sizeof("matched_rows") - 1,		0, NULL, 0, NULL},
 	{ZEND_ACC_PUBLIC, "client_info",	sizeof("client_info") - 1,		0, NULL, 0, NULL},
 	{ZEND_ACC_PUBLIC, "client_version",	sizeof("client_version") - 1,	0, NULL, 0, NULL},
 	{ZEND_ACC_PUBLIC, "connect_errno",	sizeof("connect_errno") - 1,	0, NULL, 0, NULL},
@@ -379,6 +450,7 @@ zend_property_info mysqli_result_property_info_entries[] = {
 
 const mysqli_property_entry mysqli_stmt_property_entries[] = {
 	{"affected_rows", sizeof("affected_rows")-1,stmt_affected_rows_read, NULL},
+	{"matched_rows", sizeof("matched_rows")-1,	stmt_matched_rows_read, NULL},
 	{"insert_id",	sizeof("insert_id") - 1, 	stmt_insert_id_read, NULL},
 	{"num_rows",	sizeof("num_rows") - 1, 	stmt_num_rows_read, NULL},
 	{"param_count", sizeof("param_count") - 1,	stmt_param_count_read, NULL},
@@ -393,6 +465,7 @@ const mysqli_property_entry mysqli_stmt_property_entries[] = {
 
 zend_property_info mysqli_stmt_property_info_entries[] = {
 	{ZEND_ACC_PUBLIC, "affected_rows", sizeof("affected_rows") - 1,	0, NULL, 0, NULL},
+	{ZEND_ACC_PUBLIC, "matched_rows", sizeof("matched_rows") - 1,	0, NULL, 0, NULL},
 	{ZEND_ACC_PUBLIC, "insert_id",	sizeof("insert_id") - 1,		0, NULL, 0, NULL},
 	{ZEND_ACC_PUBLIC, "num_rows",	sizeof("num_rows") - 1,			0, NULL, 0, NULL},
 	{ZEND_ACC_PUBLIC, "param_count",sizeof("param_count") - 1,		0, NULL, 0, NULL},

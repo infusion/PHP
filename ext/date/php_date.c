@@ -137,6 +137,12 @@ ZEND_BEGIN_ARG_INFO(arginfo_date_sun_info, 0)
 	ZEND_ARG_INFO(0, longitude)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_timechop, 0, 0, 1)
+	ZEND_ARG_INFO(0, time)
+	ZEND_ARG_INFO(0, format)
+	ZEND_ARG_INFO(0, is_array)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_date_create, 0, 0, 0)
 	ZEND_ARG_INFO(0, time)
 	ZEND_ARG_INFO(0, object)
@@ -425,6 +431,7 @@ const zend_function_entry date_functions[] = {
 	PHP_FE(date_sunrise, arginfo_date_sunrise)
 	PHP_FE(date_sunset, arginfo_date_sunset)
 	PHP_FE(date_sun_info, arginfo_date_sun_info)
+	PHP_FE(timechop, arginfo_timechop)
 	{NULL, NULL, NULL}
 };
 
@@ -869,7 +876,7 @@ static char* guess_timezone(const timelib_tzdb *tzdb TSRMLS_DC)
 		time_t     the_time;
 		char      *tzid = NULL;
 		
-		the_time = time(NULL);
+		the_time = sapi_get_request_time(TSRMLS_C);
 		ta = php_localtime_r(&the_time, &tmbuf);
 		if (ta) {
 			tzid = timelib_timezone_id_from_abbr(ta->tm_zone, ta->tm_gmtoff, ta->tm_isdst);
@@ -1169,7 +1176,7 @@ static void php_date(INTERNAL_FUNCTION_PARAMETERS, int localtime)
 		RETURN_FALSE;
 	}
 	if (ZEND_NUM_ARGS() == 1) {
-		ts = time(NULL);
+		ts = sapi_get_request_time(TSRMLS_C);
 	}
 
 	string = php_format_date(format, format_len, ts, localtime TSRMLS_CC);
@@ -1335,7 +1342,7 @@ PHP_FUNCTION(idate)
 	}
 
 	if (ZEND_NUM_ARGS() == 1) {
-		ts = time(NULL);
+		ts = sapi_get_request_time(TSRMLS_C);
 	}
 
 	ret = php_idate(format[0], ts, 0);
@@ -1416,7 +1423,7 @@ PHP_FUNCTION(strtotime)
 		now = timelib_time_ctor();
 		now->tz_info = tzi;
 		now->zone_type = TIMELIB_ZONETYPE_ID;
-		timelib_unixtime2local(now, (timelib_sll) time(NULL));
+		timelib_unixtime2local(now, (timelib_sll) sapi_get_request_time(TSRMLS_C));
 	} else {
 		RETURN_FALSE;
 	}
@@ -1460,12 +1467,12 @@ PHPAPI void php_mktime(INTERNAL_FUNCTION_PARAMETERS, int gmt)
 	/* Initialize structure with current time */
 	now = timelib_time_ctor();
 	if (gmt) {
-		timelib_unixtime2gmt(now, (timelib_sll) time(NULL));
+		timelib_unixtime2gmt(now, (timelib_sll) sapi_get_request_time(TSRMLS_C));
 	} else {
 		tzi = get_timezone_info(TSRMLS_C);
 		now->tz_info = tzi;
 		now->zone_type = TIMELIB_ZONETYPE_ID;
-		timelib_unixtime2local(now, (timelib_sll) time(NULL));
+		timelib_unixtime2local(now, (timelib_sll) sapi_get_request_time(TSRMLS_C));
 	}
 	/* Fill in the new data */
 	switch (ZEND_NUM_ARGS()) {
@@ -1585,7 +1592,7 @@ PHPAPI void php_strftime(INTERNAL_FUNCTION_PARAMETERS, int gmt)
 	timelib_tzinfo      *tzi;
 	timelib_time_offset *offset = NULL;
 
-	timestamp = (long) time(NULL);
+	timestamp = (long) sapi_get_request_time(TSRMLS_C);
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &format, &format_len, &timestamp) == FAILURE) {
 		RETURN_FALSE;
@@ -1677,7 +1684,7 @@ PHP_FUNCTION(gmstrftime)
    Return current UNIX timestamp */
 PHP_FUNCTION(time)
 {
-	RETURN_LONG((long)time(NULL));
+	RETURN_LONG((long)sapi_get_request_time(TSRMLS_C));
 }
 /* }}} */
 
@@ -1685,7 +1692,7 @@ PHP_FUNCTION(time)
    Returns the results of the C system call localtime as an associative array if the associative_array argument is set to 1 other wise it is a regular array */
 PHP_FUNCTION(localtime)
 {
-	long timestamp = (long)time(NULL);
+	long timestamp = (long)sapi_get_request_time(TSRMLS_C);
 	zend_bool associative = 0;
 	timelib_tzinfo *tzi;
 	timelib_time   *ts;
@@ -1732,7 +1739,7 @@ PHP_FUNCTION(localtime)
    Get date/time information */
 PHP_FUNCTION(getdate)
 {
-	long timestamp = (long)time(NULL);
+	long timestamp = (long)sapi_get_request_time(TSRMLS_C);
 	timelib_tzinfo *tzi;
 	timelib_time   *ts;
 
@@ -2445,7 +2452,7 @@ PHPAPI int php_date_initialize(php_date_obj *dateobj, /*const*/ char *time_str, 
 			now->tz_abbr = new_abbr;
 			break;
 	}
-	timelib_unixtime2local(now, (timelib_sll) time(NULL));
+	timelib_unixtime2local(now, (timelib_sll) sapi_get_request_time(TSRMLS_C));
 
 	timelib_fill_holes(dateobj->time, now, TIMELIB_NO_CLONE);
 	timelib_update_ts(dateobj->time, tzi);
@@ -4171,6 +4178,140 @@ PHP_FUNCTION(date_sun_info)
 	timelib_time_dtor(t2);
 }
 /* }}} */
+
+/* {{{ proto int timechop(int time, mixed format=null, bool as_array=0)
+   Chops a time value and returns as format string or as array */
+#define NUM (sizeof(code) - 1)
+#define _Q(s) #s
+#define Q(s) _Q(s)
+
+PHP_FUNCTION(timechop)
+{
+	const long date[] = {315360000, 31536000, 2592000, 604800, 86400, 3600, 60, 1};
+	long data[] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+	const char code[] = "kynwdhms";
+	const char *ndx[] = {"decade", "year", "month", "week", "day", "hour", "minute", "second"};
+
+	zend_bool is_array = 0;
+
+	zval *_format;
+	char *format;
+	long count, time, i, neg = 0;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l|zb", &time, &_format, &is_array) == FAILURE) {
+		return;
+	}
+
+	if (time > 1000000000) {
+		time = (long) sapi_get_request_time(TSRMLS_C) - time;
+	} else
+
+	if (time < 0) {
+		time = -time;
+		neg = 1;
+	}
+
+	if (ZEND_NUM_ARGS() == 1) {
+		format = NULL;
+		count = 2;
+	} else switch (Z_TYPE_P(_format)) {
+		case IS_STRING:
+			if (!is_numeric_string(Z_STRVAL_P(_format), Z_STRLEN_P(_format), NULL, NULL, 0)) {
+				format = Z_STRVAL_P(_format);
+				count = NUM;
+				break;
+			}
+			/* Fall */
+
+		case IS_LONG:
+		case IS_DOUBLE:
+			convert_to_long(_format);
+			format = NULL;
+			count = Z_LVAL_P(_format);
+			break;
+
+		case IS_NULL:
+			format = NULL;
+			count = 2;
+			break;
+
+		default:
+			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Passed a not supported format type");
+			return;
+		}
+
+	if (is_array) {
+
+		array_init(return_value);
+
+		long tmp;
+
+		if (0 == time) {
+			add_assoc_long(return_value, ndx[6], 0);
+		} else for (i = 0; i < NUM; i++) {
+
+				if (NULL != format && NULL == strchr(format, code[i]) || 0 == (tmp = time / date[i])) {
+					continue;
+				}
+
+				time -= tmp * date[i];
+				add_assoc_long(return_value, ndx[i], tmp);
+			}
+
+		add_assoc_bool(return_value, "negative", neg);
+
+	} else {
+
+		long j = 0;
+		long c = 1;
+
+		smart_str str = {0};
+
+		for (i = 0; i < NUM; i++) {
+
+			if (NULL != format && NULL == strchr(format, code[i]) || 0 == (data[i] = time / date[i])) {
+				continue;
+			}
+
+			time -= data[i] * date[i];
+			j++;
+		}
+
+		for (i = 0; i < NUM && c <= count; i++) if (data[i] > 0) {
+
+			if (c > 1) {
+				if (c == j || c == count) {
+					smart_str_append_const(&str, " {"Q(NUM*2)"} ");
+				} else {
+					smart_str_append_const(&str, ", ");
+				}
+			}
+
+			if (data[i] == 1) {
+				smart_str_appendc(&str, '{');
+				smart_str_append_long(&str, i);
+				smart_str_appendc(&str, '}');
+			} else {
+				smart_str_append_long(&str, data[i]);
+				smart_str_append_const(&str, " {");
+				smart_str_append_long(&str, i + NUM);
+				smart_str_appendc(&str, '}');
+			}
+			c++;
+		}
+
+		smart_str_append_const(&str, " {");
+		smart_str_append_long(&str, neg + NUM * 2 + 1); // 17 & 18
+		smart_str_appendc(&str, '}');
+		RETURN_STRINGL(str.c, str.len, 0)
+	}
+}
+#undef NUM
+#undef _Q
+#undef Q
+/* }}} */
+
 /*
  * Local variables:
  * tab-width: 4

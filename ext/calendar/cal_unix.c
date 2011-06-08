@@ -36,7 +36,7 @@ PHP_FUNCTION(unixtojd)
 	}	
 
 	if (!ts) {
-		ts = time(NULL);
+		ts = sapi_get_request_time(TSRMLS_C);
 	} else if (ts < 0) {
 		RETURN_FALSE;
 	}

@@ -377,6 +377,7 @@ typedef MYSQLND_RES *		(*func_mysqlnd_conn__list_method)(MYSQLND *conn, const ch
 
 typedef uint64_t			(*func_mysqlnd_conn__get_last_insert_id)(const MYSQLND * const conn TSRMLS_DC);
 typedef uint64_t			(*func_mysqlnd_conn__get_affected_rows)(const MYSQLND * const conn TSRMLS_DC);
+typedef uint64_t			(*func_mysqlnd_conn__get_matched_rows)(const MYSQLND * const conn TSRMLS_DC);
 typedef unsigned int		(*func_mysqlnd_conn__get_warning_count)(const MYSQLND * const conn TSRMLS_DC);
 
 typedef unsigned int		(*func_mysqlnd_conn__get_field_count)(const MYSQLND * const conn TSRMLS_DC);
@@ -454,6 +455,7 @@ struct st_mysqlnd_conn_methods
 
 	func_mysqlnd_conn__get_last_insert_id get_last_insert_id;
 	func_mysqlnd_conn__get_affected_rows get_affected_rows;
+        func_mysqlnd_conn__get_matched_rows get_matched_rows;
 	func_mysqlnd_conn__get_warning_count get_warning_count;
 
 	func_mysqlnd_conn__get_field_count get_field_count;
@@ -621,6 +623,7 @@ typedef MYSQLND_RES *		(*func_mysqlnd_stmt__get_parameter_metadata)(MYSQLND_STMT
 typedef MYSQLND_RES *		(*func_mysqlnd_stmt__get_result_metadata)(MYSQLND_STMT * const stmt TSRMLS_DC);
 typedef uint64_t			(*func_mysqlnd_stmt__get_last_insert_id)(const MYSQLND_STMT * const stmt TSRMLS_DC);
 typedef uint64_t			(*func_mysqlnd_stmt__get_affected_rows)(const MYSQLND_STMT * const stmt TSRMLS_DC);
+typedef uint64_t			(*func_mysqlnd_stmt__get_matched_rows)(const MYSQLND_STMT * const stmt TSRMLS_DC);
 typedef uint64_t			(*func_mysqlnd_stmt__get_num_rows)(const MYSQLND_STMT * const stmt TSRMLS_DC);
 typedef unsigned int		(*func_mysqlnd_stmt__get_param_count)(const MYSQLND_STMT * const stmt TSRMLS_DC);
 typedef unsigned int		(*func_mysqlnd_stmt__get_field_count)(const MYSQLND_STMT * const stmt TSRMLS_DC);
@@ -666,6 +669,7 @@ struct st_mysqlnd_stmt_methods
 
 	func_mysqlnd_stmt__get_last_insert_id get_last_insert_id;
 	func_mysqlnd_stmt__get_affected_rows get_affected_rows;
+        func_mysqlnd_stmt__get_matched_rows get_matched_rows;
 	func_mysqlnd_stmt__get_num_rows get_num_rows;
 
 	func_mysqlnd_stmt__get_param_count get_param_count;

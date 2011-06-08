@@ -73,6 +73,7 @@ static PHP_MINIT_FUNCTION(json)
 	REGISTER_LONG_CONSTANT("JSON_HEX_QUOT", PHP_JSON_HEX_QUOT, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("JSON_FORCE_OBJECT", PHP_JSON_FORCE_OBJECT, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("JSON_NUMERIC_CHECK", PHP_JSON_NUMERIC_CHECK, CONST_CS | CONST_PERSISTENT);
+	REGISTER_LONG_CONSTANT("JSON_CALLBACK_CHECK", PHP_JSON_CALLBACK_CHECK, CONST_CS | CONST_PERSISTENT);
 
 	REGISTER_LONG_CONSTANT("JSON_ERROR_NONE", PHP_JSON_ERROR_NONE, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("JSON_ERROR_DEPTH", PHP_JSON_ERROR_DEPTH, CONST_CS | CONST_PERSISTENT);
@@ -238,7 +239,7 @@ static void json_encode_array(smart_str *buf, zval **val, int options TSRMLS_DC)
 							need_comma = 1;
 						}
 
-						json_escape_string(buf, key, key_len - 1, options TSRMLS_CC);
+						json_escape_string(buf, key, key_len - 1, options | PHP_JSON_KEY_CHECK TSRMLS_CC);
 						smart_str_appendc(buf, ':');
 
 						php_json_encode(buf, *data, options TSRMLS_CC);
@@ -286,6 +287,23 @@ static void json_escape_string(smart_str *buf, char *s, int len, int options TSR
 		return;
 	}
 
+	if (options & PHP_JSON_KEY_CHECK) {
+
+		int res = 3;
+
+		for (pos = 0; pos < len && (res & 1); pos++) {
+			res&= ((!!isdigit(s[pos])) << 1) | (!!isalnum(s[pos]));
+		}
+
+		if (1 == res) {
+
+			smart_str_appendl(buf, s, len);
+			return;
+		}
+
+		pos = 0;
+	}
+
 	if (options & PHP_JSON_NUMERIC_CHECK) {
 		double d;
 		int type;
@@ -307,7 +325,22 @@ static void json_escape_string(smart_str *buf, char *s, int len, int options TSR
 			}
 			return;
 		}
-		
+	}
+
+	if ((options & PHP_JSON_CALLBACK_CHECK) && len > 4 && 0x62635f5f == *(long *) s) { // __cb search
+
+		for (pos = 4; pos < len; pos++) {
+
+			if (!isalnum(s[pos]) && s[pos] != '_') {
+				goto proceed;
+			}
+		}
+
+		smart_str_appendl(buf, s + 4, len - 4);
+
+		return;
+proceed:
+		pos = 0; // reset the abused variable
 	}
 
 	utf16 = (unsigned short *) safe_emalloc(len, sizeof(unsigned short), 0);

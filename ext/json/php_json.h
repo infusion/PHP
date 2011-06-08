@@ -56,6 +56,8 @@ PHP_JSON_API void php_json_decode(zval *return_value, char *str, int str_len, ze
 #define PHP_JSON_HEX_QUOT	(1<<3)
 #define PHP_JSON_FORCE_OBJECT	(1<<4)
 #define PHP_JSON_NUMERIC_CHECK	(1<<5)
+#define PHP_JSON_CALLBACK_CHECK	(1<<6)
+#define PHP_JSON_KEY_CHECK	(1<<7)
 
 #define PHP_JSON_OUTPUT_ARRAY 0
 #define PHP_JSON_OUTPUT_OBJECT 1

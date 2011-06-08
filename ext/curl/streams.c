@@ -126,13 +126,13 @@ static size_t on_header_available(char *data, size_t size, size_t nmemb, void *c
 	
 }
 
-static int on_progress_avail(php_stream *stream, double dltotal, double dlnow, double ultotal, double ulnow)
+static int on_progress_avail(void *stream, double dltotal, double dlnow, double ultotal, double ulnow)
 {
 	TSRMLS_FETCH();
 
 	/* our notification system only works in a single direction; we should detect which
 	 * direction is important and use the correct values in this call */
-	php_stream_notify_progress(stream->context, (size_t) dlnow, (size_t) dltotal);
+	php_stream_notify_progress(((php_stream *) stream)->context, (size_t) dlnow, (size_t) dltotal);
 	return 0;
 }
 
@@ -395,7 +395,7 @@ php_stream *php_curl_stream_opener(php_stream_wrapper *wrapper, char *filename, 
 				}
 			}
 			if (mr > 1) {
-				if ((PG(open_basedir) && *PG(open_basedir)) || PG(safe_mode)) {
+				if ((PG(open_basedir) && *PG(open_basedir))) {
 					curl_easy_setopt(curlstream->curl, CURLOPT_FOLLOWLOCATION, 0);
 				} else {
 					curl_easy_setopt(curlstream->curl, CURLOPT_FOLLOWLOCATION, 1);
@@ -403,7 +403,7 @@ php_stream *php_curl_stream_opener(php_stream_wrapper *wrapper, char *filename, 
 				curl_easy_setopt(curlstream->curl, CURLOPT_MAXREDIRS, mr);
 			}
 		} else {
-			if ((PG(open_basedir) && *PG(open_basedir)) || PG(safe_mode)) {
+			if ((PG(open_basedir) && *PG(open_basedir))) {
 				curl_easy_setopt(curlstream->curl, CURLOPT_FOLLOWLOCATION, 0);
 			} else {
 				curl_easy_setopt(curlstream->curl, CURLOPT_FOLLOWLOCATION, 1);

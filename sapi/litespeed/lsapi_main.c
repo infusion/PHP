@@ -111,16 +111,6 @@ static void sapi_lsapi_ini_defaults(HashTable *configuration_hash)
 {
     zval *tmp, *entry;
 
-#if PHP_MAJOR_VERSION > 4
-/*
-    MAKE_STD_ZVAL(tmp);
-
-    INI_DEFAULT("register_long_arrays", "0");
-
-    FREE_ZVAL(tmp);
-*/
-#endif
-
 }
 /* }}} */
 
@@ -225,25 +215,6 @@ static int add_variable( const char * pKey, int keyLen, const char * pValue, int
 }
 
 
-static int add_variable_magic_quote( const char * pKey, int keyLen, const char * pValue, int valLen, 
-                         void * arg )
-{
-    zval * gpc_element, **gpc_element_p;
-    HashTable * symtable1 = Z_ARRVAL_P((zval * )arg);
-    register char * pKey1 = (char *)pKey;
-
-    MAKE_STD_ZVAL(gpc_element);
-    Z_STRLEN_P( gpc_element ) = valLen;
-    Z_STRVAL_P( gpc_element ) = php_addslashes((char *)pValue, valLen, &Z_STRLEN_P( gpc_element ), 0 );
-    Z_TYPE_P( gpc_element ) = IS_STRING;
-#if PHP_MAJOR_VERSION > 4
-    zend_symtable_update( symtable1, pKey1, keyLen + 1, &gpc_element, sizeof( zval *), (void **) &gpc_element_p );
-#else
-    zend_hash_update( symtable1, pKey1, keyLen + 1, &gpc_element, sizeof( zval *), (void **) &gpc_element_p );
-#endif
-    return 1;
-}
-
 /* {{{ sapi_lsapi_register_variables
  */
 static void sapi_lsapi_register_variables(zval *track_vars_array TSRMLS_DC)
@@ -253,15 +224,10 @@ static void sapi_lsapi_register_variables(zval *track_vars_array TSRMLS_DC)
         if ( (SG(request_info).request_uri ) )
             php_self = (SG(request_info).request_uri );
 
-        if (!PG(magic_quotes_gpc)) {
             LSAPI_ForeachHeader( add_variable, track_vars_array );
             LSAPI_ForeachEnv( add_variable, track_vars_array );
             add_variable("PHP_SELF", 8, php_self, strlen( php_self ), track_vars_array );
-        } else {
-            LSAPI_ForeachHeader( add_variable_magic_quote, track_vars_array );
-            LSAPI_ForeachEnv( add_variable_magic_quote, track_vars_array );
-            add_variable_magic_quote("PHP_SELF", 8, php_self, strlen( php_self ), track_vars_array );
-        }
+
         php_import_environment_variables(track_vars_array TSRMLS_CC);
     } else {
         php_import_environment_variables(track_vars_array TSRMLS_CC);

@@ -201,13 +201,6 @@ int phar_mount_entry(phar_archive_data *phar, char *filename, int filename_len, 
 			entry.tmp = estrndup(filename, filename_len);
 		}
 	}
-#if PHP_API_VERSION < 20100412
-	if (PG(safe_mode) && !is_phar && (!php_checkuid(entry.tmp, NULL, CHECKUID_CHECK_FILE_AND_DIR))) {
-		efree(entry.tmp);
-		efree(entry.filename);
-		return FAILURE;
-	}
-#endif
 
 	filename_len = strlen(entry.tmp);
 	filename = entry.tmp;
@@ -803,7 +796,7 @@ phar_entry_data *phar_get_or_create_entry_data(char *fname, int fname_len, char 
 
 	phar_add_virtual_dirs(phar, path, path_len TSRMLS_CC);
 	etemp.is_modified = 1;
-	etemp.timestamp = time(0);
+	etemp.timestamp = sapi_get_request_time(TSRMLS_C);
 	etemp.is_crc_checked = 1;
 	etemp.phar = phar;
 	etemp.filename = estrndup(path, path_len);
@@ -850,11 +843,6 @@ int phar_open_archive_fp(phar_archive_data *phar TSRMLS_DC) /* {{{ */
 	if (phar_get_pharfp(phar TSRMLS_CC)) {
 		return SUCCESS;
 	}
-#if PHP_API_VERSION < 20100412
-	if (PG(safe_mode) && (!php_checkuid(phar->fname, NULL, CHECKUID_ALLOW_ONLY_FILE))) {
-		return FAILURE;
-	}
-#endif
 
 	if (php_check_open_basedir(phar->fname TSRMLS_CC)) {
 		return FAILURE;

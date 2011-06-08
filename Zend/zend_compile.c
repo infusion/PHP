@@ -2079,7 +2079,7 @@ void zend_do_pass_param(znode *param, zend_uchar op, int offset TSRMLS_DC) /* {{
 	zend_stack_top(&CG(function_call_stack), (void **) &function_ptr_ptr);
 	function_ptr = *function_ptr_ptr;
 
-	if (original_op == ZEND_SEND_REF && !CG(allow_call_time_pass_reference)) {
+	if (original_op == ZEND_SEND_REF) {
 		if (function_ptr &&
 				function_ptr->common.function_name &&
 				function_ptr->common.type == ZEND_USER_FUNCTION &&
@@ -4428,6 +4428,42 @@ void zend_do_isset_or_isempty(int type, znode *result, znode *variable TSRMLS_DC
 	last_op->extended_value |= type;
 
 	*result = last_op->result;
+}
+/* }}} */
+
+void zend_do_sizeof(int type, znode *result, znode *arg TSRMLS_DC) {
+
+	if (arg->op_type == IS_CONST) {
+
+		if (type == ZEND_STRLEN) {
+			result->op_type = IS_CONST;
+			Z_TYPE(result->u.constant) = IS_LONG;
+			Z_LVAL(result->u.constant) = Z_STRLEN(arg->u.constant);
+		} else {
+			zend_error(E_COMPILE_ERROR, "count() expects an array, constant given");
+		}
+
+	} else {
+
+		zend_op *opline = get_next_op(CG(active_op_array) TSRMLS_CC);
+
+		opline->result.op_type = IS_TMP_VAR;
+		opline->result.u.var = get_temporary_variable(CG(active_op_array));
+		opline->op1 = *arg;
+
+		opline->opcode = ZEND_SIZEOF;
+		opline->extended_value|= type;
+		SET_UNUSED(opline->op2);
+		*result = opline->result;
+	}
+}
+/* }}} */
+
+void zend_do_ifset(znode *result, znode *variable TSRMLS_DC) {
+
+
+	fprintf(stderr, "IFSET: %i\n", variable->op_type);
+
 }
 /* }}} */
 

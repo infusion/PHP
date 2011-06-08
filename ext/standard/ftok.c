@@ -53,7 +53,7 @@ PHP_FUNCTION(ftok)
 		RETURN_LONG(-1);
     }
 
-	if ((PG(safe_mode) && (!php_checkuid(pathname, NULL, CHECKUID_CHECK_FILE_AND_DIR))) || php_check_open_basedir(pathname TSRMLS_CC)) {
+	if (php_check_open_basedir(pathname TSRMLS_CC)) {
 		RETURN_LONG(-1);
 	}
 

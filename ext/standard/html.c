@@ -13,7 +13,7 @@
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
    | Authors: Rasmus Lerdorf <rasmus@php.net>                             |
-   |          Jaakko Hyvätti <jaakko.hyvatti@iki.fi>                      |
+   |          Jaakko Hyvï¿½tti <jaakko.hyvatti@iki.fi>                      |
    |          Wez Furlong <wez@thebrainroom.com>                          |
    +----------------------------------------------------------------------+
 */
@@ -715,13 +715,13 @@ inline static unsigned int get_next_char(enum entity_charset charset,
 static enum entity_charset determine_charset(char *charset_hint TSRMLS_DC)
 {
 	int i;
-	enum entity_charset charset = cs_8859_1;
+	enum entity_charset charset = cs_utf_8;
 	int len = 0;
 	zval *uf_result = NULL;
 
 	/* Guarantee default behaviour for backwards compatibility */
 	if (charset_hint == NULL)
-		return cs_8859_1;
+		return cs_utf_8;
 
 	if ((len = strlen(charset_hint)) != 0) {
 		goto det_charset;
@@ -1274,7 +1274,7 @@ static void php_html_entities(INTERNAL_FUNCTION_PARAMETERS, int all)
 	char *str, *hint_charset = NULL;
 	int str_len, hint_charset_len = 0;
 	int len;
-	long quote_style = ENT_COMPAT;
+	long quote_style = ENT_QUOTES;
 	char *replaced;
 	zend_bool double_encode = 1;
 
@@ -1317,7 +1317,7 @@ PHP_FUNCTION(htmlspecialchars_decode)
 {
 	char *str, *new_str, *e, *p;
 	int len, j, i, new_len;
-	long quote_style = ENT_COMPAT;
+	long quote_style = ENT_QUOTES;
 	struct basic_entities_dec basic_entities_dec[8];
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|l", &str, &len, &quote_style) == FAILURE) {
@@ -1383,7 +1383,7 @@ PHP_FUNCTION(html_entity_decode)
 {
 	char *str, *hint_charset = NULL;
 	int str_len, hint_charset_len = 0, len;
-	long quote_style = ENT_COMPAT;
+	long quote_style = ENT_QUOTES;
 	char *replaced;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|ls", &str, &str_len,
@@ -1412,7 +1412,7 @@ PHP_FUNCTION(htmlentities)
    Returns the internal translation table used by htmlspecialchars and htmlentities */
 PHP_FUNCTION(get_html_translation_table)
 {
-	long which = HTML_SPECIALCHARS, quote_style = ENT_COMPAT;
+	long which = HTML_SPECIALCHARS, quote_style = ENT_QUOTES;
 	unsigned int i;
 	int j;
 	unsigned char ind[5]; /* max # of 8-bit code units (4; for UTF-8) + 1 for \0 */

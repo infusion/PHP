@@ -295,9 +295,9 @@ static int php_count_recursive(zval *array, long mode TSRMLS_DC) /* {{{ */
 }
 /* }}} */
 
-/* {{{ proto int count(mixed var [, int mode])
+/* {{{ proto int sizeof(mixed var [, int mode])
    Count the number of elements in a variable (usually an array) */
-PHP_FUNCTION(count)
+PHP_FUNCTION(sizeof)
 {
 	zval *array;
 	long mode = COUNT_NORMAL;

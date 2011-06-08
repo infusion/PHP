@@ -44,13 +44,8 @@ extern zend_module_entry zip_module_entry;
 #endif
 
 /* {{{ ZIP_OPENBASEDIR_CHECKPATH(filename) */
-#if PHP_API_VERSION < 20100412
-# define ZIP_OPENBASEDIR_CHECKPATH(filename) \
-	(PG(safe_mode) && (!php_checkuid(filename, NULL, CHECKUID_CHECK_FILE_AND_DIR))) || php_check_open_basedir(filename TSRMLS_CC)
-#else
 #define ZIP_OPENBASEDIR_CHECKPATH(filename) \
 	php_check_open_basedir(filename TSRMLS_CC)
-#endif
 /* }}} */
 
 typedef struct _ze_zip_rsrc {

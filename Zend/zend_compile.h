@@ -504,6 +504,9 @@ void zend_do_include_or_eval(int type, znode *result, const znode *op1 TSRMLS_DC
 
 void zend_do_unset(const znode *variable TSRMLS_DC);
 void zend_do_isset_or_isempty(int type, znode *result, znode *variable TSRMLS_DC);
+void zend_do_ifset(znode *result, znode *variable TSRMLS_DC);
+
+void zend_do_sizeof(int type, znode *result, znode *variable TSRMLS_DC);
 
 void zend_do_instanceof(znode *result, const znode *expr, const znode *class_znode, int type TSRMLS_DC);
 
@@ -681,8 +684,13 @@ int zendlex(znode *zendlval TSRMLS_DC);
 
 #define ZEND_ISSET				(1<<0)
 #define ZEND_ISEMPTY			(1<<1)
-#define ZEND_ISSET_ISEMPTY_MASK	(ZEND_ISSET | ZEND_ISEMPTY)
-#define ZEND_QUICK_SET			(1<<2)
+#define ZEND_EXISTS                     (1<<2)
+#define ZEND_ISSET_ISEMPTY_MASK	(ZEND_ISSET | ZEND_ISEMPTY | ZEND_EXISTS)
+#define ZEND_QUICK_SET			(1<<3)
+
+
+#define ZEND_STRLEN                     (1<<0)
+#define ZEND_COUNT                      (1<<1)
 
 #define ZEND_CT	(1<<0)
 #define ZEND_RT (1<<1)

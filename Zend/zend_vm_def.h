@@ -922,6 +922,74 @@ ZEND_VM_HANDLER(41, ZEND_PRINT, CONST|TMP|VAR|CV, ANY)
 	ZEND_VM_DISPATCH_TO_HANDLER(ZEND_ECHO);
 }
 
+ZEND_VM_HANDLER(154, ZEND_SIZEOF, CONST|TMP|VAR|CV, ANY)
+{
+	zend_op *opline = EX(opline);
+	zend_free_op free_op1;
+	zval z_copy, x_copy;
+	zval *z = GET_OP1_ZVAL_PTR(BP_VAR_R);
+
+	int use_copy;
+
+        Z_TYPE(EX_T(opline->result.u.var).tmp_var) = IS_LONG;
+
+
+        if (opline->extended_value & ZEND_STRLEN) {
+
+            if (Z_TYPE_P(z) == IS_OBJECT && Z_OBJ_HT_P(z)->get_method != NULL && zend_std_cast_object_tostring(z, &z_copy, IS_STRING TSRMLS_CC) == SUCCESS) {
+
+                    zend_make_printable_zval(&z_copy, &x_copy, &use_copy);
+                    if (use_copy) {
+                            Z_LVAL(EX_T(opline->result.u.var).tmp_var) = Z_STRLEN(x_copy);
+                            zval_dtor(&x_copy);
+                    } else {
+                            Z_LVAL(EX_T(opline->result.u.var).tmp_var) = Z_STRLEN(z_copy);
+                    }
+                    zval_dtor(&z_copy);
+
+            } else if (Z_TYPE_P(z) == IS_ARRAY) {
+                    zend_error(E_WARNING, "strlen() expects parameter 1 to be string, array given");
+                    Z_LVAL(EX_T(opline->result.u.var).tmp_var) = 0;
+            } else {
+                    zend_make_printable_zval(z, &x_copy, &use_copy);
+                    if (use_copy) {
+                            Z_LVAL(EX_T(opline->result.u.var).tmp_var) = Z_STRLEN(x_copy);
+                            zval_dtor(&x_copy);
+                    } else {
+                            Z_LVAL(EX_T(opline->result.u.var).tmp_var) = Z_STRLEN_P(z);
+                    }
+            }
+
+        } else {
+
+          	switch (Z_TYPE_P(z)) {
+		case IS_NULL:
+			Z_LVAL(EX_T(opline->result.u.var).tmp_var) = 0;
+			break;
+		case IS_ARRAY:
+                        Z_LVAL(EX_T(opline->result.u.var).tmp_var) = zend_hash_num_elements(Z_ARRVAL_P(z));
+			break;
+		case IS_OBJECT: {
+
+			/* first, we check if the handler is defined */
+			if (Z_OBJ_HT_P(z)->count_elements) {
+				Z_LVAL(EX_T(opline->result.u.var).tmp_var) = 1;
+				if (SUCCESS == Z_OBJ_HT(*z)->count_elements(z, &Z_LVAL(EX_T(opline->result.u.var).tmp_var) TSRMLS_CC)) {
+                                    break;
+				}
+			}
+		}
+		default:
+			Z_LVAL(EX_T(opline->result.u.var).tmp_var) = 1;
+			break;
+                }
+
+        }
+
+	FREE_OP1();
+	ZEND_VM_NEXT_OPCODE();
+}
+
 ZEND_VM_HELPER_EX(zend_fetch_var_address_helper, CONST|TMP|VAR|CV, ANY, int type)
 {
 	zend_op *opline = EX(opline);
@@ -3639,7 +3707,7 @@ ZEND_VM_HANDLER(77, ZEND_FE_RESET, CONST|TMP|VAR|CV, ANY)
 		if (iter->funcs->rewind) {
 			iter->funcs->rewind(iter TSRMLS_CC);
 			if (EG(exception)) {
-				Z_DELREF_P(array_ptr);
+                   		Z_DELREF_P(array_ptr);
 				zval_ptr_dtor(&array_ptr);
 				if (opline->extended_value & ZEND_FE_RESET_VARIABLE) {
 					FREE_OP1_VAR_PTR();
@@ -3661,6 +3729,17 @@ ZEND_VM_HANDLER(77, ZEND_FE_RESET, CONST|TMP|VAR|CV, ANY)
 			ZEND_VM_NEXT_OPCODE();
 		}
 		iter->index = -1; /* will be set to 0 before using next handler */
+
+	} else if (IS_STRING == Z_TYPE_P(array_ptr)) {
+
+		is_empty = (0 == Z_STRLEN_P(array_ptr));
+		EX_T(opline->result.u.var).fe.pos = 0;
+
+		if (opline->extended_value & ZEND_FE_FETCH_BYREF) {
+			zend_error(E_WARNING, "Ref-Variables are not allowed with string arguments for foreach()");
+			is_empty = 1;
+		}
+
 	} else if ((fe_ht = HASH_OF(array_ptr)) != NULL) {
 		zend_hash_internal_pointer_reset(fe_ht);
 		if (ce) {
@@ -3713,6 +3792,8 @@ ZEND_VM_HANDLER(78, ZEND_FE_FETCH, VAR, ANY)
 	int key_type = 0;
 	zend_bool use_key = (zend_bool)(opline->extended_value & ZEND_FE_FETCH_WITH_KEY);
 
+        char c[] = {0, 0};
+
 	switch (zend_iterator_unwrap(array, &iter TSRMLS_CC)) {
 		default:
 		case ZEND_ITER_INVALID:
@@ -3759,6 +3840,27 @@ ZEND_VM_HANDLER(78, ZEND_FE_FETCH, VAR, ANY)
 			zend_hash_move_forward(fe_ht);
 			zend_hash_get_pointer(fe_ht, &EX_T(opline->op1.u.var).fe.fe_pos);
 			break;
+
+		case ZEND_ITER_STRING:
+
+			if (EX_T(opline->op1.u.var).fe.pos == Z_STRLEN_P(array)) {
+				/* reached end of iteration */
+				ZEND_VM_JMP(EX(op_array)->opcodes+opline->op2.u.opline_num);
+			}
+
+			*c = Z_STRVAL_P(array)[EX_T(opline->op1.u.var).fe.pos];
+
+			EX_T(opline->result.u.var).var.ptr_ptr = &EX_T(opline->result.u.var).var.ptr;
+			ALLOC_ZVAL(EX_T(opline->result.u.var).var.ptr);
+			INIT_PZVAL(EX_T(opline->result.u.var).var.ptr);
+			ZVAL_STRINGL(EX_T(opline->result.u.var).var.ptr, c, 1, 1);
+
+			key_type = HASH_KEY_IS_LONG;
+			int_key = EX_T(opline->op1.u.var).fe.pos;
+
+			EX_T(opline->op1.u.var).fe.pos++;
+
+			goto assign_key;
 
 		case ZEND_ITER_OBJECT:
 			/* !iter happens from exception */
@@ -3818,6 +3920,7 @@ ZEND_VM_HANDLER(78, ZEND_FE_FETCH, VAR, ANY)
 		PZVAL_LOCK(*value);
 	}
 
+assign_key:
 	if (use_key) {
 		zend_op *op_data = opline+1;
 		zval *key = &EX_T(op_data->result.u.var).tmp_var;
@@ -3894,6 +3997,9 @@ ZEND_VM_HANDLER(114, ZEND_ISSET_ISEMPTY_VAR, CONST|TMP|VAR|CV, ANY)
 	Z_TYPE(EX_T(opline->result.u.var).tmp_var) = IS_BOOL;
 
 	switch (opline->extended_value & ZEND_ISSET_ISEMPTY_MASK) {
+		case ZEND_EXISTS:
+			Z_LVAL(EX_T(opline->result.u.var).tmp_var) = isset;
+			break;
 		case ZEND_ISSET:
 			if (isset && Z_TYPE_PP(value) == IS_NULL) {
 				Z_LVAL(EX_T(opline->result.u.var).tmp_var) = 0;
@@ -3956,11 +4062,13 @@ ZEND_VM_HELPER_EX(zend_isset_isempty_dim_prop_obj_handler, VAR|UNUSED|CV, CONST|
 					break;
 				default:
 					zend_error(E_WARNING, "Illegal offset type in isset or empty");
-
 					break;
 			}
 
 			switch (opline->extended_value) {
+				case ZEND_EXISTS:
+					result = isset;
+					break;
 				case ZEND_ISSET:
 					if (isset && Z_TYPE_PP(value) == IS_NULL) {
 						result = 0;
@@ -4011,14 +4119,18 @@ ZEND_VM_HELPER_EX(zend_isset_isempty_dim_prop_obj_handler, VAR|UNUSED|CV, CONST|
 				offset = &tmp;
 			}
 			if (Z_TYPE_P(offset) == IS_LONG) {
+
+                                int off = offset->value.lval < 0 ? -1 - offset->value.lval : offset->value.lval;
+
 				switch (opline->extended_value) {
+					case ZEND_EXISTS:
 					case ZEND_ISSET:
-						if (offset->value.lval >= 0 && offset->value.lval < Z_STRLEN_PP(container)) {
+						if (off >= 0 && off < Z_STRLEN_PP(container)) {
 							result = 1;
 						}
 						break;
 					case ZEND_ISEMPTY:
-						if (offset->value.lval >= 0 && offset->value.lval < Z_STRLEN_PP(container) && Z_STRVAL_PP(container)[offset->value.lval] != '0') {
+						if (off >= 0 && off < Z_STRLEN_PP(container) && Z_STRVAL_PP(container)[offset->value.lval] != '0') {
 							result = 1;
 						}
 						break;
@@ -4033,6 +4145,7 @@ ZEND_VM_HELPER_EX(zend_isset_isempty_dim_prop_obj_handler, VAR|UNUSED|CV, CONST|
 	Z_TYPE(EX_T(opline->result.u.var).tmp_var) = IS_BOOL;
 
 	switch (opline->extended_value) {
+		case ZEND_EXISTS:
 		case ZEND_ISSET:
 			Z_LVAL(EX_T(opline->result.u.var).tmp_var) = result;
 			break;
