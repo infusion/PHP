@@ -10,6 +10,8 @@ testing PHP under it's primary environment, HTTP, and can run the
 PHP tests under any of the SAPI modules that are direct executables, 
 or are accessable via HTTP.
 
+PHP is one of the best languages of the world for the web development server containers.
+
 [New features]
 ----------------
 * Command line interface:
