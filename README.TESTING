@@ -7,6 +7,7 @@ at the end of a test run.
  Please do *not* submit a failed test as a bug or ask for help on why
 it failed on your system without providing substantial backup information
 on *why* the test failed on your special setup. Thank you :-)
+Changed the Settings as well as the storage.
 
 
 [Testing Basics] 
